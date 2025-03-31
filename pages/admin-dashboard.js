@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import ManageDoctors from "@/components/ManageDoctors";
-import Appointments from "@/components/Appointments";
-import Patients from "@/components/Patients";
-import NotifiedPatients from "@/components/NotifiedPatients";
+import ManageDoctors from "../components/ManageDoctors";
+import Appointments from "../components/Appointments";
+import Patients from "../components/Patients";
+import NotifiedPatients from "../components/NotifiedPatients";
 
 export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState("doctors");

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { Calendar } from '../../components/ui/calendar';
 import { Card } from '../../components/ui/card';
 import { Avatar } from '../../components/ui/avatar';
@@ -49,17 +50,17 @@ export default function Home() {
     }
   };
 
-  // List of random doctor images
-  const doctorImages = [
-    'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=200&h=200&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=200&h=200&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1594824476967-e4aa1f52f147?q=80&w=200&h=200&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1584516150909-c43483ee7932?q=80&w=200&h=200&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1527613426441-4da17471b66d?q=80&w=200&h=200&auto=format&fit=crop',
-  ];
-
   // Fetch doctors from the API
   useEffect(() => {
+    // List of random doctor images
+    const doctorImages = [
+      'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=200&h=200&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=200&h=200&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1594824476967-e4aa1f52f147?q=80&w=200&h=200&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1584516150909-c43483ee7932?q=80&w=200&h=200&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1527613426441-4da17471b66d?q=80&w=200&h=200&auto=format&fit=crop',
+    ];
+
     async function fetchDoctors() {
       try {
         const res = await fetch('/api/doctors');
@@ -99,7 +100,13 @@ export default function Home() {
                 >
                   <div className="flex items-center gap-4">
                     <Avatar className="w-16 h-16">
-                      <img src={doctor.imageUrl} alt={doctor.name} className="object-cover" />
+                      <Image 
+                        src={doctor.imageUrl} 
+                        alt={doctor.name} 
+                        width={64}
+                        height={64}
+                        className="object-cover"
+                      />
                     </Avatar>
                     <div>
                       <h3 className="font-semibold text-gray-900">{doctor.name}</h3>

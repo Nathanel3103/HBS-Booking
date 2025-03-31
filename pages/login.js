@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
+import Link from "next/link";
 import PatientDashboard from "./patient-dashboard";
 import AdminDashboard from "./admin-dashboard";
 
@@ -84,7 +85,7 @@ export default function Login() {
           </form>
           <p className="mt-4 text-sm">
             Don't have an account?{" "}
-            <a href="/register" className="text-blue-500">Register here</a>
+            <Link href="/register" className="text-blue-500">Register here</Link>
           </p>
         </div>
       </div>

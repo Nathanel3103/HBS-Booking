@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
+import Link from "next/link";
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
 
@@ -100,7 +101,7 @@ export default function Register() {
         </form>
         <p className="mt-4 text-sm">
           Already have an account?{" "}
-          <a href="/login" className="text-blue-500">Login here</a>
+          <Link href="/login" className="text-blue-500">Login here</Link>
         </p>
       </div>
     </div>

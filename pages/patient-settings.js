@@ -28,7 +28,7 @@ export default function PatientSettings() {
         .then((data) => setFormData(data))
         .catch((err) => console.error("Error fetching user:", err));
     }
-  }, []);
+  }, [router]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

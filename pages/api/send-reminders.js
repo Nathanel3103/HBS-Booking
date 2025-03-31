@@ -7,6 +7,10 @@ import { sendSms } from "../../utils/sendSms";
 import moment from "moment";
 
 export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Method not allowed' });
+  }
+
   console.log("SENDING REMINDERS");
 
   await dbConnect();
