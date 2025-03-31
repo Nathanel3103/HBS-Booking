@@ -17,30 +17,34 @@ export default function Register() {
   const handleRegister = async (e) => {
     e.preventDefault();
 
-    try {
+    if (!phoneNumber) {
+      setError("Phone number is required");
+      return;
+    }
 
+    try {
       const response = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password, phoneNumber, role }),
       });
 
-      const userdata = JSON.stringify({ name, email, password, phoneNumber, role });
-      console.log("Collected user data is ", userdata);
-
       const data = await response.json();
-
+      console.log("Server response:", data);
 
       if (response.ok) {
         setSuccess("User registered successfully!");
-        console.log("Response is okay");
         setError("");
-        setTimeout(() => router.push("/login"), 2000); // Redirect to login
+        setTimeout(() => router.push("/login"), 2000);
       } else {
-        setError(data.error || "Error registering user");
+        const errorMessage = typeof data.message === 'object' ? 
+          JSON.stringify(data.message) : 
+          data.message || "Error registering user";
+        setError(errorMessage);
       }
     } catch (err) {
-      setError("Something went wrong. Try again.");
+      console.error("Registration error:", err);
+      setError("Something went wrong. Please try again.");
     }
   };
 
@@ -48,7 +52,7 @@ export default function Register() {
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white p-6 rounded-lg shadow-md w-96">
         <h2 className="text-2xl font-bold mb-4">Register</h2>
-        {error && <p className="text-red-500">{error}</p>}
+        {error && <p className="text-red-500">{typeof error === 'string' ? error : 'An error occurred'}</p>}
         {success && <p className="text-green-500">{success}</p>}
         <form onSubmit={handleRegister} className="flex flex-col">
           <input
@@ -77,13 +81,10 @@ export default function Register() {
           />
           <PhoneInput
             country={'zw'}
-            type=""
             placeholder="788077462"
             className="p-2 border rounded mb-2"
             value={phoneNumber}
-            onChange={setphoneNumber}
-            //onChange={(e) => setphoneNumber(e.target.value)}
-            //onChange={setphoneNumber => this.setState({setphoneNumber})}
+            onChange={(value) => setphoneNumber(value)}
             required
           />
           <select

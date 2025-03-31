@@ -4,13 +4,16 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 export default async function handler(req, res) {
-    await dbConnect();
+    try {
+        await dbConnect();
 
-    if (req.method === "POST") {
-        const { email, password } = req.body;
-        const user = await User.findOne({ email });
+        if (req.method === "POST") {
+            const { email, password } = req.body;
 
-        try {
+            if (!email || !password) {
+                return res.status(400).json({ message: "Email and password are required." });
+            }
+
             const user = await User.findOne({ email });
 
             if (!user) {
@@ -24,9 +27,17 @@ export default async function handler(req, res) {
                 return res.status(400).json({ message: "Invalid email or password." });
             }
 
-            // Send only necessary user details
+            // Generate JWT token
+            const token = jwt.sign(
+                { userId: user._id, role: user.role },
+                process.env.JWT_SECRET || 'your-secret-key',
+                { expiresIn: '24h' }
+            );
+
+            // Send only necessary user details with token
             return res.status(200).json({
                 message: "Login successful",
+                token,
                 user: {
                     id: user._id,
                     name: user.name,
@@ -35,11 +46,14 @@ export default async function handler(req, res) {
                     role: user.role
                 }
             });
-
-        } catch (error) {
-            return res.status(500).json({ message: "Server error", error });
         }
-    }
 
-    return res.status(405).json({ message: "Method not allowed" });
+        return res.status(405).json({ message: "Method not allowed" });
+    } catch (error) {
+        console.error('Login error:', error);
+        return res.status(500).json({ 
+            message: "Server error", 
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
+    }
 }

@@ -3,79 +3,108 @@ import User from "../../models/User";
 import bcrypt from "bcryptjs";
 
 export default async function handler(req, res) {
-  await dbConnect();
-
-  if (req.method === "POST") {
-    const { name, email, password, phoneNumber, role } = req.body;
-
-if (!name || !email || !password || !phoneNumber || !role) {
-      return res.status(400).json({ message: "All fields, including phone number, are required." });
-  } 
-   
-  try {
-    const existingUser = await User.findOne({ email });
-
-    if (existingUser) {
-        return res.status(400).json({ message: "User already exists." });
+    // Only allow POST requests
+    if (req.method !== "POST") {
+        return res.status(405).json({ message: "Method not allowed" });
     }
 
-    // Hash the password before saving
-    //const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, 10);
+    try {
+        // Connect to database
+        const conn = await dbConnect();
+        if (!conn) {
+            throw new Error("Failed to connect to database");
+        }
 
-    if (phoneNumber === ""){
-      console.log("Phone number not being identified we have this ",phoneNumber);
-    };
+        const { name, email, password, phoneNumber, role = "patient" } = req.body;
 
-    // Create a new user
-    const newUser = new User({
-        name,
-        email,
-        password: hashedPassword,
-        phoneNumber, // Store the phone number
-        role: role || "patient",
-    });
+        // Validate required fields
+        const requiredFields = { name, email, password, phoneNumber };
+        const missingFields = Object.entries(requiredFields)
+            .filter(([_, value]) => !value)
+            .map(([key]) => key);
 
-    await newUser.save();
+        if (missingFields.length > 0) {
+            return res.status(400).json({
+                message: `Missing required fields: ${missingFields.join(", ")}`
+            });
+        }
 
-    return res.status(201).json({message: "User registered successfully",});
-  } catch (error) {
-    return res.status(500).json({ message: "Server error", error });
-}
-}
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ message: "Invalid email format." });
+        }
 
-return res.status(405).json({ message: "Method not allowed" });
+        // Validate password strength
+        if (password.length < 6) {
+            return res.status(400).json({ 
+                message: "Password must be at least 6 characters long." 
+            });
+        }
 
-  /** 
-   * user: {
-            id: newUser._id,
-            name: newUser.name,
-            email: newUser.email,
-            phoneNumber: newUser.phoneNumber,
-            role: role || "patient",
-        },
-   * 
-   * 
-   * try {
-        // Hash the password before saving
+        // Validate role
+        if (role && !["admin", "patient"].includes(role)) {
+            return res.status(400).json({ 
+                message: "Invalid role. Must be either 'admin' or 'patient'." 
+            });
+        }
+
+        // Check for existing user
+        const existingUser = await User.findOne({ email }).select('email');
+        if (existingUser) {
+            return res.status(400).json({ 
+                message: "User already exists with this email." 
+            });
+        }
+
+        // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
-  
+
         // Create new user
         const newUser = new User({
-          name,
-          email,
-          password: hashedPassword, // Store hashed password
-          role: role || "patient"
+            name: name.trim(),
+            email: email.toLowerCase().trim(),
+            password: hashedPassword,
+            phoneNumber: phoneNumber.trim(),
+            role: role || "patient"
         });
-  
+
+        // Save user to database
         await newUser.save();
-  
-        res.status(201).json({ message: "User registered successfully!" });
-      } catch (error) {
-        res.status(500).json({ error: "Error registering user" });
-      }
-    } else {
-      res.status(405).json({ error: "Method not allowed" });
+
+        // Return success response
+        return res.status(201).json({
+            message: "User registered successfully",
+            user: {
+                name: newUser.name,
+                email: newUser.email,
+                phoneNumber: newUser.phoneNumber,
+                role: newUser.role
+            }
+        });
+
+    } catch (error) {
+        console.error('Registration error:', error);
+        
+        // Handle mongoose validation errors
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({
+                message: "Validation error",
+                errors: Object.values(error.errors).map(err => err.message)
+            });
+        }
+
+        // Handle mongoose duplicate key error
+        if (error.code === 11000) {
+            return res.status(400).json({
+                message: "Email already exists"
+            });
+        }
+
+        // Handle other errors
+        return res.status(500).json({
+            message: "Server error",
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
     }
-*/  
-    }
+}
