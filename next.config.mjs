@@ -1,15 +1,10 @@
-/** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
-  swcMinify: true, // Improves performance by enabling SWC compiler
-  webpack: (config, { isServer }) => {
-    // Fix for Webpack issues during deployment
+  webpack: (config) => {
     config.resolve.fallback = {
-      ...config.resolve.fallback,
-      fs: false, // Disable 'fs' module for client-side
-      path: false,
-      os: false,
-      crypto: false,
+      fs: false,
+      net: false,
+      tls: false,
+      buffer: require.resolve("buffer/"),
     };
     return config;
   },
