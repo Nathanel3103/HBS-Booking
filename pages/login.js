@@ -3,6 +3,8 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import PatientDashboard from "./patient-dashboard";
 import AdminDashboard from "./admin-dashboard";
+import AdminDashboard from "./admin-dashboard";
+
 
 export default function Login() {
   const [email, setEmail] = useState("");
