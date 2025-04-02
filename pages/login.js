@@ -83,7 +83,7 @@ export default function Login() {
             </label>
             <input
               type="email"
-              placeholder="you@example.com"
+              placeholder="you@gmail.com"
               className={`w-full px-4 py-2 rounded-lg border ${
                 touched.email && !validateEmail(email)
                   ? 'border-rose-200 bg-rose-50'
