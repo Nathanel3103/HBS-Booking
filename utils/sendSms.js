@@ -1,8 +1,8 @@
 import twilio from "twilio";
 
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const twilioPhone = process.env.TWILIO_PHONE_NUMBER;
+const accountSid = process.env.TWILIO_ACCOUNT_SMS_SID;
+const authToken = process.env.TWILIO_AUTH_SMS_TOKEN;
+const twilioPhone = process.env.TWILIO_PHONE_SMS_NUMBER;
 
 const client = twilio(accountSid, authToken);
 

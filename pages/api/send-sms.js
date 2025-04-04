@@ -13,13 +13,13 @@ export default async function handler(req, res) {
 
   try {
     const client = twilio(
-      process.env.TWILIO_ACCOUNT_SID,
-      process.env.TWILIO_AUTH_TOKEN
+      process.env.TWILIO_ACCOUNT_SMS_SID,
+      process.env.TWILIO_AUTH_SMS_TOKEN
     );
 
     const response = await client.messages.create({
       body: message,
-      from: process.env.TWILIO_PHONE_NUMBER,
+      from: process.env.TWILIO_PHONE_SMS_NUMBER,
       to: phoneNumber,
     });
 
