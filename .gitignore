@@ -43,3 +43,6 @@ next-env.d.ts
 
 #critical info
 
+#package file
+package-lock.json
+package.json
