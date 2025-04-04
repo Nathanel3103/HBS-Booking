@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, EyeSlashIcon, EnvelopeIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 import PatientDashboard from "./patient-dashboard";
 import AdminDashboard from "./admin-dashboard";
 
@@ -81,22 +81,27 @@ export default function Login() {
             <label className="block text-sm font-medium mb-1 text-gray-700">
               Email
             </label>
-            <input
-              type="email"
-              placeholder="you@gmail.com"
-              className={`w-full px-4 py-2 rounded-lg border ${
-                touched.email && !validateEmail(email)
-                  ? 'border-rose-200 bg-rose-50'
-                  : 'border-gray-200 bg-white'
-              } text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400`}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onBlur={() => setTouched({ ...touched, email: true })}
-              required
-            />
-            {touched.email && !validateEmail(email) && (
-              <p className="mt-1 text-sm text-rose-600">Please enter a valid email address</p>
-            )}
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <EnvelopeIcon className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="email"
+                placeholder="you@gmail.com"
+                className={`w-full pl-10 px-4 py-2 rounded-lg border ${
+                  touched.email && !validateEmail(email)
+                    ? 'border-rose-200 bg-rose-50'
+                    : 'border-gray-200 bg-white'
+                } text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400`}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => setTouched({ ...touched, email: true })}
+                required
+              />
+              {touched.email && !validateEmail(email) && (
+                <p className="mt-1 text-sm text-rose-600">Please enter a valid email address</p>
+              )}
+            </div>
           </div>
 
           <div>
@@ -104,10 +109,13 @@ export default function Login() {
               Password
             </label>
             <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <LockClosedIcon className="h-5 w-5 text-gray-400" />
+              </div>
               <input
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
-                className={`w-full px-4 py-2 rounded-lg border ${
+                className={`w-full pl-10 px-4 py-2 rounded-lg border ${
                   touched.password && !password
                     ? 'border-rose-200 bg-rose-50'
                     : 'border-gray-200 bg-white'

@@ -3,7 +3,14 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
-import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { 
+  EyeIcon, 
+  EyeSlashIcon,
+  UserIcon,
+  EnvelopeIcon,
+  LockClosedIcon,
+  UserGroupIcon
+} from '@heroicons/react/24/outline';
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -97,38 +104,48 @@ export default function Register() {
             <label className="block text-sm font-medium mb-1 text-gray-700">
               Full Name
             </label>
-            <input
-              type="text"
-              placeholder="Enter your name"
-              className={`w-full px-4 py-2 rounded-lg border ${
-                touched.name && !name
-                  ? 'border-rose-200 bg-rose-50'
-                  : 'border-gray-200 bg-white'
-              } text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400`}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onBlur={() => setTouched({ ...touched, name: true })}
-              required
-            />
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <UserIcon className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Enter your name"
+                className={`w-full pl-10 px-4 py-2 rounded-lg border ${
+                  touched.name && !name
+                    ? 'border-rose-200 bg-rose-50'
+                    : 'border-gray-200 bg-white'
+                } text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400`}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onBlur={() => setTouched({ ...touched, name: true })}
+                required
+              />
+            </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1 text-gray-700">
               Email
             </label>
-            <input
-              type="email"
-              placeholder="you@example.com"
-              className={`w-full px-4 py-2 rounded-lg border ${
-                touched.email && !validateEmail(email)
-                  ? 'border-rose-200 bg-rose-50'
-                  : 'border-gray-200 bg-white'
-              } text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400`}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onBlur={() => setTouched({ ...touched, email: true })}
-              required
-            />
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <EnvelopeIcon className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="email"
+                placeholder="you@example.com"
+                className={`w-full pl-10 px-4 py-2 rounded-lg border ${
+                  touched.email && !validateEmail(email)
+                    ? 'border-rose-200 bg-rose-50'
+                    : 'border-gray-200 bg-white'
+                } text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400`}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => setTouched({ ...touched, email: true })}
+                required
+              />
+            </div>
           </div>
 
           <div className="relative">
@@ -136,10 +153,13 @@ export default function Register() {
               Password
             </label>
             <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <LockClosedIcon className="h-5 w-5 text-gray-400" />
+              </div>
               <input
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
-                className={`w-full px-4 py-2 rounded-lg border ${
+                className={`w-full pl-10 px-4 py-2 rounded-lg border ${
                   touched.password && !validatePassword(password)
                     ? 'border-rose-200 bg-rose-50'
                     : 'border-gray-200 bg-white'
@@ -167,36 +187,43 @@ export default function Register() {
             <label className="block text-sm font-medium mb-1 text-gray-700">
               Phone Number
             </label>
-            <PhoneInput
-              country={'zw'}
-              placeholder="788077462"
-              containerClass=""
-              inputClass={`w-full px-4 py-2 rounded-lg !w-full ${
-                touched.phone && !phoneNumber
-                  ? '!border-rose-200 !bg-rose-50'
-                  : '!border-gray-200 !bg-white'
-              } !text-gray-800`}
-              buttonClass="!border-gray-200"
-              dropdownClass="!bg-white !text-gray-800"
-              value={phoneNumber}
-              onChange={(value) => setphoneNumber(value)}
-              onBlur={() => setTouched({ ...touched, phone: true })}
-              required
-            />
+            <div className="relative flex items-center">
+              <PhoneInput
+                country={'zw'}
+                placeholder="788077462"
+                containerClass="w-full"
+                inputClass={`w-full px-4 py-2 rounded-lg !w-full ${
+                  touched.phone && !phoneNumber
+                    ? '!border-rose-200 !bg-rose-50'
+                    : '!border-gray-200 !bg-white'
+                } !text-gray-800`}
+                buttonClass="!border-gray-200"
+                dropdownClass="!bg-white !text-gray-800"
+                value={phoneNumber}
+                onChange={(value) => setphoneNumber(value)}
+                onBlur={() => setTouched({ ...touched, phone: true })}
+                required
+              />
+            </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1 text-gray-700">
               Role
             </label>
-            <select
-              className="w-full px-4 py-2 rounded-lg border border-gray-200 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-            >
-              <option value="patient">Patient</option>
-              <option value="admin">Admin</option>
-            </select>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <UserGroupIcon className="h-5 w-5 text-gray-400" />
+              </div>
+              <select
+                className="w-full pl-10 px-4 py-2 rounded-lg border border-gray-200 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+              >
+                <option value="patient">Patient</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
           </div>
 
           <button
