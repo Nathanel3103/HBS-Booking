@@ -23,16 +23,14 @@ export default function PatientDashboard() {
     const router = useRouter();
 
     useEffect(() => {
-        const loggedInUser = JSON.parse(localStorage.getItem("user"));
-        if (!loggedInUser) {
-            router.push("/login");
-        } else {
+        const loggedInUser = JSON.parse(localStorage.getItem('user'));
+        if (loggedInUser) {
             setUser(loggedInUser);
             if (!loggedInUser.phoneNumber || loggedInUser.phoneNumber.trim() === "") {
                 setPhoneMissing(true);
             }
         }
-    }, []);
+    }, [router]);
 
     if (!user) {
         return (
