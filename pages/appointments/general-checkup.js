@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
+import { ArrowLeft, Clock, Calendar as CalendarIcon, User, FileText } from "lucide-react";
+import { useRouter } from "next/router";
 
 export default function GeneralCheckup() {
     const [availableSlots, setAvailableSlots] = useState([]);
@@ -15,6 +17,7 @@ export default function GeneralCheckup() {
         nextOfKinPhone: "",
     });
 
+    const router = useRouter();
     const user = JSON.parse(localStorage.getItem("user"));
 
     useEffect(() => {
@@ -124,101 +127,157 @@ export default function GeneralCheckup() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-            <div className="max-w-lg w-full bg-white p-6 rounded-lg shadow-lg">
-                <h1 className="text-3xl font-bold text-center text-blue-600 mb-6">Book Appointment</h1>
-
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="flex flex-col">
-                        <label className="text-gray-700 font-medium">Doctor</label>
-                        <select
-                            value={formData.doctor}
-                            onChange={(e) => handleDoctorChange(e.target.value)}
-                            className="border p-3 rounded-lg w-full focus:ring focus:ring-blue-300"
-                            required
+        <div className="min-h-screen bg-gray-50 py-8">
+            <div className="max-w-4xl mx-auto px-4">
+                {/* Header */}
+                <div className="bg-white rounded-t-xl shadow-sm border border-gray-200 p-6 mb-6">
+                    <div className="flex items-center space-x-4">
+                        <button 
+                            onClick={() => router.push('/patient-dashboard')}
+                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                         >
-                            <option value="">Select a Doctor</option>
-                            {doctors.map((doctor) => (
-                                <option key={doctor._id} value={doctor._id}>
-                                    {doctor.name} ({doctor.specialization})
-                                </option>
-                            ))}
-                        </select>
+                            <ArrowLeft className="text-gray-600" size={20} />
+                        </button>
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-900">Book Appointment</h1>
+                            <p className="text-sm text-gray-600 mt-1">Schedule your general checkup appointment</p>
+                        </div>
                     </div>
+                </div>
 
-                    <div className="flex flex-col">
-                        <div className="flex flex-col">
-                            <label className="text-gray-700 font-medium">Date of Appointment</label>
-                            <Calendar
-                                onChange={handleDateChange}
-                                value={formData.date}
-                                className="border rounded-lg p-2 w-full"
-                                tileDisabled={({ date }) => isDateDisabled(date)}
-                                minDate={new Date(new Date().setDate(new Date().getDate() + 1))}  // Tomorrow
-                                maxDate={new Date(new Date().setMonth(new Date().getMonth() + 2))} // 2 months ahead
-                            />
-</div>
-
-                    </div>
-
-                    <div className="flex flex-col">
-                        <label className="text-gray-700 font-medium">Time of Appointment</label>
-                        <select
-                            value={formData.time}
-                            onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                            className="border p-3 rounded-lg w-full focus:ring focus:ring-blue-300"
-                            required
-                        >
-                            <option value="">Select a Time Slot</option>
-                            {availableSlots.length > 0 &&
-                                availableSlots.map((slot, index) => (
-                                    <option key={index} value={slot}>
-                                        {slot}
+                {/* Main Content */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Doctor Selection */}
+                        <div className="space-y-2">
+                            <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
+                                <User className="w-4 h-4 mr-2 text-gray-400" />
+                                Select Doctor
+                            </label>
+                            <select
+                                value={formData.doctor}
+                                onChange={(e) => handleDoctorChange(e.target.value)}
+                                className="w-full px-4 py-2.5 text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                required
+                            >
+                                <option value="">Select a Doctor</option>
+                                {doctors.map((doctor) => (
+                                    <option key={doctor._id} value={doctor._id}>
+                                        {doctor.name} ({doctor.specialization})
                                     </option>
                                 ))}
-                        </select>
-                    </div>
+                            </select>
+                        </div>
 
-                    <div className="flex flex-col">
-                        <label className="text-gray-700 font-medium">Description of Checkup</label>
-                        <textarea
-                            value={formData.description}
-                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            className="border p-3 rounded-lg w-full h-24 focus:ring focus:ring-blue-300"
-                            required
-                        />
-                    </div>
+                        {/* Calendar and Time Selection Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Calendar Section */}
+                            <div className="space-y-2">
+                                <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
+                                    <CalendarIcon className="w-4 h-4 mr-2 text-gray-400" />
+                                    Select Date
+                                </label>
+                                <div className="calendar-container p-4 bg-white border border-gray-200 rounded-lg">
+                                    <Calendar
+                                        onChange={handleDateChange}
+                                        value={formData.date}
+                                        className="rounded-lg border-0 w-full"
+                                        tileDisabled={({ date }) => isDateDisabled(date)}
+                                        minDate={new Date(new Date().setDate(new Date().getDate() + 1))}
+                                        maxDate={new Date(new Date().setMonth(new Date().getMonth() + 2))}
+                                    />
+                                </div>
+                            </div>
 
-                    <div className="flex flex-col">
-                        <label className="text-gray-700 font-medium">Next of Kin Name</label>
-                        <input
-                            type="text"
-                            value={formData.nextOfKinName}
-                            onChange={(e) => setFormData({ ...formData, nextOfKinName: e.target.value })}
-                            className="border p-3 rounded-lg w-full focus:ring focus:ring-blue-300"
-                            required
-                        />
-                    </div>
+                            {/* Time Slots Section */}
+                            <div className="space-y-2">
+                                <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
+                                    <Clock className="w-4 h-4 mr-2 text-gray-400" />
+                                    Select Time
+                                </label>
+                                <div className="grid grid-cols-2 gap-2 p-4 bg-white border border-gray-200 rounded-lg">
+                                    {availableSlots.length > 0 ? (
+                                        availableSlots.map((slot, index) => (
+                                            <button
+                                                key={index}
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, time: slot })}
+                                                className={`py-2 px-4 rounded-lg text-sm font-medium transition-colors
+                                                    ${formData.time === slot 
+                                                        ? 'bg-blue-600 text-white' 
+                                                        : 'bg-gray-50 text-gray-700 hover:bg-gray-100'}`}
+                                            >
+                                                {slot}
+                                            </button>
+                                        ))
+                                    ) : (
+                                        <p className="col-span-2 text-center text-gray-500 py-4">
+                                            {formData.doctor 
+                                                ? "No available slots for selected date" 
+                                                : "Please select a doctor first"}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
 
-                    <div className="flex flex-col">
-                        <label className="text-gray-700 font-medium">Next of Kin Phone Number</label>
-                        <input
-                            type="tel"
-                            value={formData.nextOfKinPhone}
-                            onChange={(e) => setFormData({ ...formData, nextOfKinPhone: e.target.value })}
-                            className="border p-3 rounded-lg w-full focus:ring focus:ring-blue-300"
-                            required
-                        />
-                    </div>
+                        {/* Description Section */}
+                        <div className="space-y-2">
+                            <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
+                                <FileText className="w-4 h-4 mr-2 text-gray-400" />
+                                Description
+                            </label>
+                            <textarea
+                                value={formData.description}
+                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                placeholder="Please describe your reason for visit"
+                                className="w-full px-4 py-2.5 text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[100px]"
+                            />
+                        </div>
 
-                    <button
-                        type="submit"
-                        className="w-full bg-gradient-to-r from-blue-500 to-blue-700 text-white p-3 rounded-lg font-semibold hover:opacity-90 transition"
-                    >
-                        Book Appointment
-                    </button>
-                </form>
+                        {/* Submit Button */}
+                        <button
+                            type="submit"
+                            className="w-full bg-blue-600 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                            disabled={!formData.doctor || !formData.date || !formData.time}
+                        >
+                            Book Appointment
+                        </button>
+                    </form>
+                </div>
             </div>
+
+            {/* Custom Calendar Styles */}
+            <style jsx global>{`
+                .calendar-container .react-calendar {
+                    width: 100%;
+                    border: none;
+                    background: white;
+                }
+                .react-calendar__tile {
+                    padding: 0.75em 0.5em;
+                    font-size: 0.875rem;
+                }
+                .react-calendar__tile--active {
+                    background: #2563eb !important;
+                    color: white;
+                }
+                .react-calendar__tile--disabled {
+                    background-color: #f3f4f6;
+                    color: #9ca3af;
+                }
+                .react-calendar__tile:enabled:hover,
+                .react-calendar__tile:enabled:focus {
+                    background-color: #dbeafe;
+                }
+                .react-calendar__navigation button:enabled:hover,
+                .react-calendar__navigation button:enabled:focus {
+                    background-color: #dbeafe;
+                }
+                .react-calendar__navigation button[disabled] {
+                    background-color: #f3f4f6;
+                }
+            `}</style>
         </div>
     );
 }
