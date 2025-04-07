@@ -169,9 +169,7 @@ export default function BookingHistory() {
                   <p><strong>Date:</strong> {booking.date}</p>
                   <p><strong>Time:</strong> {booking.time}</p>
                   {booking.description && <p><strong>Description:</strong> {booking.description}</p>}
-                  {booking.nextOfKin?.name && (
-                    <p><strong>Next of Kin:</strong> {booking.nextOfKin.name} ({booking.nextOfKin.phone})</p>
-                  )}
+                  
                   <button
                     onClick={() => handleEdit(booking)}
                     className="bg-blue-500 text-white p-2 rounded mt-2"

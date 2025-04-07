@@ -7,10 +7,7 @@ const BookingSchema = new mongoose.Schema({
   date: { type: Date, required: true },
   time: { type: String, required: true },
   description: { type: String },
-  nextOfKin: {
-    name: { type: String },
-    phone: { type: String },
-  },
+
   patientDetails: {
     firstName: { type: String },
     lastName: { type: String },
