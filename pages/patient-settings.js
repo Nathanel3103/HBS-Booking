@@ -14,6 +14,8 @@ export default function PatientSettings() {
     email: "",
     streetAddress: "",
     city: "",
+    nextOfKinName: "",
+    nextOfKinPhone: "",
   });
 
   const router = useRouter();
@@ -254,6 +256,43 @@ export default function PatientSettings() {
                   />
                 </div>
               </div>
+
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Next of Kin</h2>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Next of Kin Name</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User className="text-gray-400" size={18} />
+                  </div>
+                  <input 
+                    type="text" 
+                    name="nextOfKinName" 
+                    value={formData.nextOfKinName} 
+                    onChange={handleChange} 
+                    placeholder="Next of Kin Name" 
+                    className="w-full pl-10 pr-4 py-2.5 text-base text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-400"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Next of Kin Phone Number</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Phone className="text-gray-400" size={18} />
+                  </div>
+                  <input 
+                    type="text" 
+                    name="nextOfKinPhone" 
+                    value={formData.nextOfKinPhone} 
+                    onChange={handleChange} 
+                    placeholder="Next of Kin Phone Number" 
+                    className="w-full pl-10 pr-4 py-2.5 text-base text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-400"
+                  />
+                </div>
+              </div>
+
             </div>
 
             {/* Submit Button */}

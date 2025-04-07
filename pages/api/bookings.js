@@ -24,7 +24,7 @@ export default async function handler(req, res) {
   }
   } else if (req.method === "POST") { 
     
-    const { userId, appointmentType, doctor, date, time, description, nextOfKin } = req.body;
+    const { userId, appointmentType, doctor, date, time, description} = req.body;
 
     try {
         // Find the doctor
@@ -54,7 +54,6 @@ export default async function handler(req, res) {
             date,
             time,
             description,
-            nextOfKin,
         });
 
         await newBooking.save();

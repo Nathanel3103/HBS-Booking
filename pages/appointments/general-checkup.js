@@ -11,8 +11,6 @@ export default function GeneralCheckup() {
         time: "",
         doctor: "",
         description: "",
-        nextOfKinName: "",
-        nextOfKinPhone: "",
     });
 
     const user = JSON.parse(localStorage.getItem("user"));
@@ -98,10 +96,6 @@ export default function GeneralCheckup() {
             date: formData.date.toISOString().split("T")[0],
             time: formData.time,
             description: formData.description,
-            nextOfKin: { 
-                name: formData.nextOfKinName, 
-                phone: formData.nextOfKinPhone 
-            },
         };
 
         try {
@@ -113,7 +107,7 @@ export default function GeneralCheckup() {
 
             if (response.ok) {
                 alert("Booking successful!");
-                setFormData({ date: new Date(), time: "", doctor: "", description: "", nextOfKinName: "", nextOfKinPhone: "" });
+                setFormData({ date: new Date(), time: "", doctor: "", description: ""});
                 handleDoctorChange(formData.doctor);
             } else {
                 alert("Booking failed. Try again.");
@@ -185,28 +179,6 @@ export default function GeneralCheckup() {
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                             className="border p-3 rounded-lg w-full h-24 focus:ring focus:ring-blue-300"
-                            required
-                        />
-                    </div>
-
-                    <div className="flex flex-col">
-                        <label className="text-gray-700 font-medium">Next of Kin Name</label>
-                        <input
-                            type="text"
-                            value={formData.nextOfKinName}
-                            onChange={(e) => setFormData({ ...formData, nextOfKinName: e.target.value })}
-                            className="border p-3 rounded-lg w-full focus:ring focus:ring-blue-300"
-                            required
-                        />
-                    </div>
-
-                    <div className="flex flex-col">
-                        <label className="text-gray-700 font-medium">Next of Kin Phone Number</label>
-                        <input
-                            type="tel"
-                            value={formData.nextOfKinPhone}
-                            onChange={(e) => setFormData({ ...formData, nextOfKinPhone: e.target.value })}
-                            className="border p-3 rounded-lg w-full focus:ring focus:ring-blue-300"
                             required
                         />
                     </div>
