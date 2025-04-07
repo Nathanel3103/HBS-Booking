@@ -183,7 +183,6 @@ export default function GeneralCheckup() {
                                 </div>
                             </div>
 
-<<<<<<< HEAD
                             {/* Time Slots Section */}
                             <div className="space-y-2">
                                 <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
@@ -240,15 +239,6 @@ export default function GeneralCheckup() {
                         </button>
                     </form>
                 </div>
-=======
-                    <button
-                        type="submit"
-                        className="w-full bg-gradient-to-r from-blue-500 to-blue-700 text-white p-3 rounded-lg font-semibold hover:opacity-90 transition"
-                    >
-                        Book Appointment
-                    </button>
-                </form>
->>>>>>> 2c8a67852656fb88d7715b1a15b3c274c7258cae
             </div>
 
             {/* Custom Calendar Styles */}
