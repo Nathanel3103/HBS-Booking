@@ -6,7 +6,7 @@ import { sanitizeInput } from '../../../lib/whatsapp/utils';
 
 const { Twilio, validateRequest } = twilio;
 
-// Twilio client
+// Twilio client initialization
 const twilioClient = new Twilio(
   process.env.TWILIO_ACCOUNT_SID,
   process.env.TWILIO_AUTH_TOKEN
@@ -105,7 +105,14 @@ export default async function handler(req, res) {
     }
 
     // Extract message details
-    ({ Body: messageBody, From: senderNumber, ProfileName: senderName } = req.body);
+    messageBody = req.body?.Body || '';
+    senderNumber = req.body?.From || '';
+    senderName = req.body?.ProfileName || 'Unknown';
+
+    // Remove "whatsapp:" prefix from sender number if present
+    if (senderNumber.startsWith('whatsapp:')) {
+      senderNumber = senderNumber.substring(9);
+    }
 
     debugLog('Message Received', {
       bodyLength: messageBody?.length,
@@ -200,16 +207,31 @@ export default async function handler(req, res) {
       responseLength: sanitizedResponse.length
     });
 
-    await twilioClient.messages.create({
-      body: sanitizedResponse,
-      from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-      to: senderNumber,
-    });
+    try {
+      // Ensure the to number has the whatsapp: prefix if not already present
+      const toNumber = senderNumber.startsWith('whatsapp:') ? 
+        senderNumber : 
+        `whatsapp:${senderNumber}`;
+        
+      await twilioClient.messages.create({
+        body: sanitizedResponse,
+        from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+        to: toNumber,
+      });
 
-    debugLog('Message Sent Successfully', {
-      to: senderNumber,
-      timestamp: new Date().toISOString()
-    });
+      debugLog('Message Sent Successfully', {
+        to: toNumber,
+        timestamp: new Date().toISOString()
+      });
+    } catch (sendError) {
+      debugLog('Twilio Send Error', {
+        error: sendError.message,
+        errorCode: sendError.code,
+        to: senderNumber
+      });
+      // Re-throw to be caught by the outer try/catch
+      throw sendError;
+    }
 
     res.status(200).json({ success: true });
   } catch (error) {
@@ -230,10 +252,15 @@ export default async function handler(req, res) {
           messageLength: fallbackMessage.length
         });
 
+        // Ensure the to number has the whatsapp: prefix if not already present
+        const toNumber = senderNumber.startsWith('whatsapp:') ? 
+          senderNumber : 
+          `whatsapp:${senderNumber}`;
+
         await twilioClient.messages.create({
           body: fallbackMessage,
           from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-          to: senderNumber,
+          to: toNumber,
         });
       }
     } catch (sendError) {
