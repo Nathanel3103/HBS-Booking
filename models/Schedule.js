@@ -10,6 +10,15 @@ const scheduleSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  dayOfWeek: {
+    type: Number,
+    required: true
+  },
+  type: {
+    type: String,
+    enum: ['scheduled', 'leave', 'holiday'],
+    default: 'scheduled'
+  },
   startTime: {
     type: String,
     required: true
@@ -18,6 +27,10 @@ const scheduleSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  slots: [{
+    time: String,
+    duration: Number
+  }],
   isAvailable: {
     type: Boolean,
     default: true
