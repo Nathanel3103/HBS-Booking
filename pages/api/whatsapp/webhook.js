@@ -1,16 +1,16 @@
+import twilio from 'twilio';
 import { handleMessage } from '../../../lib/whatsapp/chatbot';
 import { WHATSAPP_CONFIG } from '../../../lib/whatsapp/config';
-import { Twilio, validateRequest } from 'twilio';
 import { closeDB } from '../../../lib/whatsapp/chatbot';
 import { sanitizeInput } from '../../../lib/whatsapp/utils';
 
-// Twilio client
-const twilioClient = new Twilio(
+// Initialize Twilio client
+const twilioClient = twilio(
   process.env.TWILIO_ACCOUNT_SID,
   process.env.TWILIO_AUTH_TOKEN
 );
 
-// Enhanced rate limiter with Redis-like functionality
+// Redis-based rate limiter (simplified for example)
 class RateLimiter {
   constructor(windowMs = 15 * 60 * 1000, maxRequests = 100) {
     this.windowMs = windowMs;
@@ -71,7 +71,6 @@ class RateLimiter {
 
 const rateLimiter = new RateLimiter();
 
-// Vercel API route
 export default async function handler(req, res) {
   let messageBody, senderNumber, senderName;
   
@@ -80,14 +79,14 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    // Extract message details early
+    // Extract message details
     ({ Body: messageBody, From: senderNumber, ProfileName: senderName } = req.body);
 
     if (!messageBody || !senderNumber) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Enhanced rate limiting with IP and WhatsApp number
+    // Rate limiting
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     const rateLimitKey = `${ip}:${senderNumber || 'unknown'}`;
 
@@ -107,9 +106,9 @@ export default async function handler(req, res) {
 
     // Twilio signature validation
     const signature = req.headers['x-twilio-signature'];
-    const url = process.env.WEBHOOK_URL;
+    const url = `${process.env.VERCEL_URL || 'https://yourdomain.com'}${req.url}`;
 
-    const isValid = validateRequest(
+    const isValid = twilio.validateRequest(
       process.env.TWILIO_AUTH_TOKEN,
       signature,
       url,
@@ -125,7 +124,6 @@ export default async function handler(req, res) {
     const cleanedMessage = sanitizeInput(messageBody.toLowerCase().trim());
     const cleanedSenderName = sanitizeInput(senderName || 'Unknown');
 
-    // Add debug logging
     console.log('Processing message:', {
       from: cleanedSenderName,
       number: senderNumber,
@@ -163,8 +161,7 @@ export default async function handler(req, res) {
       message: messageBody
     });
 
-    const fallbackMessage =
-      WHATSAPP_CONFIG?.ERRORS?.SYSTEM_ERROR ||
+    const fallbackMessage = WHATSAPP_CONFIG?.ERRORS?.SYSTEM_ERROR ||
       'Something went wrong. Please try again later.';
 
     try {
@@ -184,6 +181,10 @@ export default async function handler(req, res) {
 
     res.status(500).json({ error: 'Internal server error' });
   } finally {
-    await closeDB();
+    try {
+      await closeDB();
+    } catch (dbError) {
+      console.error('Error closing database connection:', dbError);
+    }
   }
 }
