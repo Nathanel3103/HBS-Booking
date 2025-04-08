@@ -1,8 +1,10 @@
 import { handleMessage } from '../../../lib/whatsapp/chatbot';
 import { WHATSAPP_CONFIG } from '../../../lib/whatsapp/config';
-import { Twilio, validateRequest } from 'twilio';
+import twilio from 'twilio';
 import { closeDB } from '../../../lib/whatsapp/chatbot';
 import { sanitizeInput } from '../../../lib/whatsapp/utils';
+
+const { Twilio, validateRequest } = twilio;
 
 // Twilio client
 const twilioClient = new Twilio(
@@ -10,7 +12,7 @@ const twilioClient = new Twilio(
   process.env.TWILIO_AUTH_TOKEN
 );
 
-// Redis-based rate limiter (simplified for example)
+// Enhanced rate limiter with Redis-like functionality
 class RateLimiter {
   constructor(windowMs = 15 * 60 * 1000, maxRequests = 100) {
     this.windowMs = windowMs;
@@ -71,19 +73,28 @@ class RateLimiter {
 
 const rateLimiter = new RateLimiter();
 
-// Debug logging function
+// Enhanced debug logging with redaction
 function debugLog(step, data) {
-  console.log('DEBUG -', step, ':', JSON.stringify(data, null, 2));
+  const redactedData = {
+    ...data,
+    // Redact sensitive information
+    body: data.body ? '[REDACTED]' : undefined,
+    signature: data.signature ? '[REDACTED]' : undefined,
+    authToken: data.authToken ? '[REDACTED]' : undefined,
+    // Shorten long messages
+    message: data.message ? data.message.substring(0, 50) + (data.message.length > 50 ? '...' : '') : undefined
+  };
+  
+  console.log('DEBUG -', step, ':', JSON.stringify(redactedData, null, 2));
 }
 
-// Vercel API route
 export default async function handler(req, res) {
   let messageBody, senderNumber, senderName;
   
   debugLog('Request Started', {
     method: req.method,
-    headers: req.headers,
-    body: req.body,
+    headers: Object.keys(req.headers),
+    body: req.body ? 'Present' : 'Missing',
     timestamp: new Date().toISOString()
   });
   
@@ -93,25 +104,31 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    // Extract message details early
+    // Extract message details
     ({ Body: messageBody, From: senderNumber, ProfileName: senderName } = req.body);
 
-    debugLog('Message Details', {
-      body: messageBody,
-      sender: senderNumber,
-      name: senderName
+    debugLog('Message Received', {
+      bodyLength: messageBody?.length,
+      sender: senderNumber ? 'Present' : 'Missing',
+      name: senderName ? 'Present' : 'Missing'
     });
 
     if (!messageBody || !senderNumber) {
-      debugLog('Missing Fields', { body: messageBody, sender: senderNumber });
+      debugLog('Missing Fields', { 
+        bodyPresent: !!messageBody, 
+        senderPresent: !!senderNumber 
+      });
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Enhanced rate limiting with IP and WhatsApp number
+    // Enhanced rate limiting
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     const rateLimitKey = `${ip}:${senderNumber || 'unknown'}`;
 
-    debugLog('Rate Limit Check', { ip, rateLimitKey });
+    debugLog('Rate Limit Check', { 
+      ip: ip ? 'Present' : 'Missing',
+      rateLimitKey: rateLimitKey ? 'Present' : 'Missing'
+    });
 
     try {
       const rateLimitInfo = await rateLimiter.consume(rateLimitKey);
@@ -119,7 +136,10 @@ export default async function handler(req, res) {
       res.setHeader('X-RateLimit-Reset', rateLimitInfo.resetTime.toISOString());
     } catch (error) {
       if (error.message === 'Rate limit exceeded') {
-        debugLog('Rate Limit Exceeded', { ip, sender: senderNumber });
+        debugLog('Rate Limit Exceeded', { 
+          ip: ip ? 'Present' : 'Missing',
+          sender: senderNumber ? 'Present' : 'Missing'
+        });
         return res.status(429).json({ 
           error: 'Too many requests',
           retryAfter: Math.ceil(rateLimiter.windowMs / 1000)
@@ -130,11 +150,11 @@ export default async function handler(req, res) {
 
     // Twilio signature validation
     const signature = req.headers['x-twilio-signature'];
-    const url = process.env.WEBHOOK_URL;
+    const url = `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host}${req.url}`;
 
     debugLog('Twilio Validation', {
       signature: signature ? 'Present' : 'Missing',
-      url: url ? 'Present' : 'Missing'
+      url: url
     });
 
     const isValid = validateRequest(
@@ -145,7 +165,7 @@ export default async function handler(req, res) {
     );
 
     if (!isValid) {
-      debugLog('Invalid Signature', { signature });
+      debugLog('Invalid Signature', { validationFailed: true });
       return res.status(403).json({ error: 'Unauthorized request' });
     }
 
@@ -156,18 +176,19 @@ export default async function handler(req, res) {
     debugLog('Processing Message', {
       from: cleanedSenderName,
       number: senderNumber,
-      message: cleanedMessage,
+      messageLength: cleanedMessage.length,
       timestamp: new Date().toISOString()
     });
 
     const response = await handleMessage(cleanedMessage, senderNumber);
     
     debugLog('Handler Response', {
-      response,
+      responseLength: response?.length,
       timestamp: new Date().toISOString()
     });
 
     if (!response) {
+      debugLog('Empty Response', { error: 'No response from handleMessage' });
       throw new Error('No response received from handleMessage');
     }
 
@@ -176,7 +197,7 @@ export default async function handler(req, res) {
 
     debugLog('Sending Response', {
       to: senderNumber,
-      response: sanitizedResponse
+      responseLength: sanitizedResponse.length
     });
 
     await twilioClient.messages.create({
@@ -186,30 +207,27 @@ export default async function handler(req, res) {
     });
 
     debugLog('Message Sent Successfully', {
-      to: cleanedSenderName,
-      response: sanitizedResponse,
+      to: senderNumber,
       timestamp: new Date().toISOString()
     });
 
     res.status(200).json({ success: true });
   } catch (error) {
-    debugLog('Error', {
-      name: error.name,
-      message: error.message,
-      stack: error.stack,
+    debugLog('Error Occurred', {
+      errorName: error.name,
+      errorMessage: error.message,
       sender: senderNumber,
-      messageBody
+      messagePresent: !!messageBody
     });
 
-    const fallbackMessage =
-      WHATSAPP_CONFIG?.ERRORS?.SYSTEM_ERROR ||
+    const fallbackMessage = WHATSAPP_CONFIG?.ERRORS?.SYSTEM_ERROR ||
       'Something went wrong. Please try again later.';
 
     try {
       if (senderNumber) {
-        debugLog('Sending Fallback Message', {
+        debugLog('Sending Fallback', {
           to: senderNumber,
-          message: fallbackMessage
+          messageLength: fallbackMessage.length
         });
 
         await twilioClient.messages.create({
@@ -219,7 +237,7 @@ export default async function handler(req, res) {
         });
       }
     } catch (sendError) {
-      debugLog('Fallback Message Error', {
+      debugLog('Fallback Failed', {
         error: sendError.message,
         sender: senderNumber
       });
@@ -229,9 +247,9 @@ export default async function handler(req, res) {
   } finally {
     try {
       await closeDB();
-      debugLog('Database Connection Closed', { timestamp: new Date().toISOString() });
+      debugLog('Database Closed', { success: true });
     } catch (dbError) {
-      debugLog('Database Close Error', { error: dbError.message });
+      debugLog('Database Close Failed', { error: dbError.message });
     }
   }
 }
