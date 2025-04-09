@@ -90,19 +90,11 @@ function debugLog(step, data) {
 }
 
 export default async function handler(req, res) {
-  let messageBody, senderNumber, senderName;
+  let messageBody, senderNumber, senderName, db;
   const messageId = req.body?.MessageSid || '';
-  
-  debugLog('Request Started', {
-    method: req.method,
-    headers: Object.keys(req.headers),
-    body: req.body ? 'Present' : 'Missing',
-    timestamp: new Date().toISOString()
-  });
   
   try {
     if (req.method !== 'POST') {
-      debugLog('Method Not Allowed', { method: req.method });
       return res.status(405).json({ error: 'Method not allowed' });
     }
 
@@ -111,20 +103,49 @@ export default async function handler(req, res) {
     senderNumber = req.body?.From || '';
     senderName = req.body?.ProfileName || 'Unknown';
 
+    if (!messageBody || !senderNumber) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
     // Remove "whatsapp:" prefix from sender number if present
     if (senderNumber.startsWith('whatsapp:')) {
       senderNumber = senderNumber.substring(9);
     }
 
-    // Check if we've already processed this message
-    const db = await connectDB();
-    const processedMessage = await db.collection('processed_messages').findOne({ messageId });
-    if (processedMessage) {
-      debugLog('Duplicate Message', { messageId });
-      return res.status(200).json({ success: true, message: 'Message already processed' });
+    // Connect to database once
+    db = await connectDB();
+
+    // Basic rate limiting
+    const lastMessage = await db.collection('processed_messages')
+      .findOne({ sender: senderNumber }, { sort: { timestamp: -1 } });
+    
+    if (lastMessage) {
+      const timeSinceLastMessage = Date.now() - lastMessage.timestamp.getTime();
+      if (timeSinceLastMessage < 2000) { // 2 second cooldown
+        return res.status(200).json({ success: true });
+      }
     }
 
-    // Mark message as processed
+    // Process the message
+    const cleanedMessage = sanitizeInput(messageBody.toLowerCase().trim());
+    const response = await handleMessage(cleanedMessage, senderNumber);
+    
+    if (!response) {
+      throw new Error('No response received from handleMessage');
+    }
+
+    // Send response via Twilio
+    const toNumber = senderNumber.startsWith('whatsapp:') ? 
+      senderNumber : 
+      `whatsapp:${senderNumber}`;
+      
+    await twilioClient.messages.create({
+      body: sanitizeInput(response),
+      from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+      to: toNumber,
+    });
+
+    // Record the processed message
     await db.collection('processed_messages').insertOne({
       messageId,
       sender: senderNumber,
@@ -132,197 +153,21 @@ export default async function handler(req, res) {
       processed: true
     });
 
-    debugLog('Message Received', {
-      bodyLength: messageBody?.length,
-      sender: senderNumber ? 'Present' : 'Missing',
-      name: senderName ? 'Present' : 'Missing'
-    });
+    return res.status(200).json({ success: true });
 
-    if (!messageBody || !senderNumber) {
-      debugLog('Missing Fields', { 
-        bodyPresent: !!messageBody, 
-        senderPresent: !!senderNumber 
-      });
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    // Enhanced rate limiting
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    const rateLimitKey = `${ip}:${senderNumber || 'unknown'}`;
-
-    // Check cooldown period
-    const lastMessage = await db.collection('processed_messages')
-      .findOne({ sender: senderNumber }, { sort: { timestamp: -1 } });
-    
-    if (lastMessage) {
-      const timeSinceLastMessage = Date.now() - lastMessage.timestamp.getTime();
-      const cooldownPeriod = 2000; // 2 seconds cooldown
-      
-      if (timeSinceLastMessage < cooldownPeriod) {
-        debugLog('Cooldown Active', { 
-          timeSinceLastMessage,
-          cooldownPeriod
-        });
-        return res.status(200).json({ 
-          success: true, 
-          message: 'Please wait before sending another message' 
-        });
-      }
-    }
-
-    debugLog('Rate Limit Check', { 
-      ip: ip ? 'Present' : 'Missing',
-      rateLimitKey: rateLimitKey ? 'Present' : 'Missing'
-    });
-
-    try {
-      const rateLimitInfo = await rateLimiter.consume(rateLimitKey);
-      res.setHeader('X-RateLimit-Remaining', rateLimitInfo.remaining);
-      res.setHeader('X-RateLimit-Reset', rateLimitInfo.resetTime.toISOString());
-    } catch (error) {
-      if (error.message === 'Rate limit exceeded') {
-        debugLog('Rate Limit Exceeded', { 
-          ip: ip ? 'Present' : 'Missing',
-          sender: senderNumber ? 'Present' : 'Missing'
-        });
-        return res.status(429).json({ 
-          error: 'Too many requests',
-          retryAfter: Math.ceil(rateLimiter.windowMs / 1000)
-        });
-      }
-      throw error;
-    }
-
-    // Twilio signature validation
-    const signature = req.headers['x-twilio-signature'];
-    const url = `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host}${req.url}`;
-
-    debugLog('Twilio Validation', {
-      signature: signature ? 'Present' : 'Missing',
-      url: url
-    });
-
-    const isValid = validateRequest(
-      process.env.TWILIO_AUTH_TOKEN,
-      signature,
-      url,
-      req.body
-    );
-
-    if (!isValid) {
-      debugLog('Invalid Signature', { validationFailed: true });
-      return res.status(403).json({ error: 'Unauthorized request' });
-    }
-
-    // Sanitize inputs
-    const cleanedMessage = sanitizeInput(messageBody.toLowerCase().trim());
-    const cleanedSenderName = sanitizeInput(senderName || 'Unknown');
-
-    debugLog('Processing Message', {
-      from: cleanedSenderName,
-      number: senderNumber,
-      messageLength: cleanedMessage.length,
-      timestamp: new Date().toISOString()
-    });
-
-    const response = await handleMessage(cleanedMessage, senderNumber);
-    
-    debugLog('Handler Response', {
-      responseLength: response?.length,
-      timestamp: new Date().toISOString()
-    });
-
-    if (!response) {
-      debugLog('Empty Response', { error: 'No response from handleMessage' });
-      throw new Error('No response received from handleMessage');
-    }
-
-    // Sanitize response before sending
-    const sanitizedResponse = sanitizeInput(response);
-
-    debugLog('Sending Response', {
-      to: senderNumber,
-      responseLength: sanitizedResponse.length
-    });
-
-    try {
-      // Ensure the to number has the whatsapp: prefix if not already present
-      const toNumber = senderNumber.startsWith('whatsapp:') ? 
-        senderNumber : 
-        `whatsapp:${senderNumber}`;
-        
-      await twilioClient.messages.create({
-        body: sanitizedResponse,
-        from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-        to: toNumber,
-      });
-
-      debugLog('Message Sent Successfully', {
-        to: toNumber,
-        timestamp: new Date().toISOString()
-      });
-    } catch (sendError) {
-      debugLog('Twilio Send Error', {
-        error: sendError.message,
-        errorCode: sendError.code,
-        to: senderNumber
-      });
-      // Re-throw to be caught by the outer try/catch
-      throw sendError;
-    }
-
-    res.status(200).json({ success: true });
   } catch (error) {
-    debugLog('Error Occurred', {
-      errorName: error.name,
-      errorMessage: error.message,
-      sender: senderNumber,
-      messagePresent: !!messageBody
-    });
-
-    const fallbackMessage = WHATSAPP_CONFIG?.ERRORS?.SYSTEM_ERROR ||
-      'Something went wrong. Please try again later.';
-
-    try {
-      if (senderNumber) {
-        debugLog('Sending Fallback', {
-          to: senderNumber,
-          messageLength: fallbackMessage.length
-        });
-
-        // Ensure the to number has the whatsapp: prefix if not already present
-        const toNumber = senderNumber.startsWith('whatsapp:') ? 
-          senderNumber : 
-          `whatsapp:${senderNumber}`;
-
-        await twilioClient.messages.create({
-          body: fallbackMessage,
-          from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-          to: toNumber,
-        });
-      }
-    } catch (sendError) {
-      debugLog('Fallback Failed', {
-        error: sendError.message,
-        sender: senderNumber
-      });
-    }
-
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Webhook Error:', error);
+    
+    // Send a simple error response to avoid timeouts
+    return res.status(500).json({ error: 'Internal server error' });
+    
   } finally {
-    try {
-      await closeDB();
-      debugLog('Database Closed', { success: true });
-      
-      // Cleanup old processed messages (older than 24 hours)
-      const db = await connectDB();
-      const cutoffTime = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      await db.collection('processed_messages').deleteMany({
-        timestamp: { $lt: cutoffTime }
-      });
-      await closeDB();
-    } catch (dbError) {
-      debugLog('Database Close Failed', { error: dbError.message });
+    if (db) {
+      try {
+        await closeDB();
+      } catch (dbError) {
+        console.error('Error closing DB:', dbError);
+      }
     }
   }
 }
