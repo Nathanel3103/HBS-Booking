@@ -3,6 +3,7 @@ import { WHATSAPP_CONFIG } from '../../../lib/whatsapp/config';
 import twilio from 'twilio';
 import { closeDB } from '../../../lib/whatsapp/chatbot';
 import { sanitizeInput } from '../../../lib/whatsapp/utils';
+import { connectDB } from '../../../lib/whatsapp/chatbot';
 
 const { Twilio, validateRequest } = twilio;
 
@@ -90,6 +91,7 @@ function debugLog(step, data) {
 
 export default async function handler(req, res) {
   let messageBody, senderNumber, senderName;
+  const messageId = req.body?.MessageSid || '';
   
   debugLog('Request Started', {
     method: req.method,
@@ -114,6 +116,22 @@ export default async function handler(req, res) {
       senderNumber = senderNumber.substring(9);
     }
 
+    // Check if we've already processed this message
+    const db = await connectDB();
+    const processedMessage = await db.collection('processed_messages').findOne({ messageId });
+    if (processedMessage) {
+      debugLog('Duplicate Message', { messageId });
+      return res.status(200).json({ success: true, message: 'Message already processed' });
+    }
+
+    // Mark message as processed
+    await db.collection('processed_messages').insertOne({
+      messageId,
+      sender: senderNumber,
+      timestamp: new Date(),
+      processed: true
+    });
+
     debugLog('Message Received', {
       bodyLength: messageBody?.length,
       sender: senderNumber ? 'Present' : 'Missing',
@@ -131,6 +149,26 @@ export default async function handler(req, res) {
     // Enhanced rate limiting
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     const rateLimitKey = `${ip}:${senderNumber || 'unknown'}`;
+
+    // Check cooldown period
+    const lastMessage = await db.collection('processed_messages')
+      .findOne({ sender: senderNumber }, { sort: { timestamp: -1 } });
+    
+    if (lastMessage) {
+      const timeSinceLastMessage = Date.now() - lastMessage.timestamp.getTime();
+      const cooldownPeriod = 2000; // 2 seconds cooldown
+      
+      if (timeSinceLastMessage < cooldownPeriod) {
+        debugLog('Cooldown Active', { 
+          timeSinceLastMessage,
+          cooldownPeriod
+        });
+        return res.status(200).json({ 
+          success: true, 
+          message: 'Please wait before sending another message' 
+        });
+      }
+    }
 
     debugLog('Rate Limit Check', { 
       ip: ip ? 'Present' : 'Missing',
@@ -275,6 +313,14 @@ export default async function handler(req, res) {
     try {
       await closeDB();
       debugLog('Database Closed', { success: true });
+      
+      // Cleanup old processed messages (older than 24 hours)
+      const db = await connectDB();
+      const cutoffTime = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      await db.collection('processed_messages').deleteMany({
+        timestamp: { $lt: cutoffTime }
+      });
+      await closeDB();
     } catch (dbError) {
       debugLog('Database Close Failed', { error: dbError.message });
     }
