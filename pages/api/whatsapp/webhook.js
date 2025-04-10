@@ -86,7 +86,9 @@ function debugLog(step, data) {
     signature: data.signature ? '[REDACTED]' : undefined,
     authToken: data.authToken ? '[REDACTED]' : undefined,
     // Shorten long messages
-    message: data.message ? data.message.substring(0, 50) + (data.message.length > 50 ? '...' : '') : undefined
+    message: data.message 
+      ? data.message.substring(0, 50) + (data.message.length > 50 ? '...' : '') 
+      : undefined
   };
   
   console.log('DEBUG -', step, ':', JSON.stringify(redactedData, null, 2));
@@ -100,6 +102,7 @@ async function connectWithRetry() {
   let retries = 0;
   while (retries < MAX_RETRIES) {
     try {
+      // Call the imported connectToDatabase
       return await connectToDatabase();
     } catch (err) {
       retries++;
@@ -134,7 +137,7 @@ export default async function handler(req, res) {
 
     // Connect to database with retry
     try {
-      db = await connectDB();
+      db = await connectWithRetry();
     } catch (error) {
       console.error('Failed to connect to database after retries:', error);
       return res.status(500).json({ error: 'Database connection failed' });
@@ -146,9 +149,9 @@ export default async function handler(req, res) {
       'Sorry, I couldn\'t process your request. Please try again later.';
     
     // Send response via Twilio
-    const toNumber = senderNumber.startsWith('whatsapp:') ? 
-      senderNumber : 
-      `whatsapp:${senderNumber}`;
+    const toNumber = senderNumber.startsWith('whatsapp:') 
+      ? senderNumber 
+      : `whatsapp:${senderNumber}`;
       
     try {
       await twilioClient.messages.create({
