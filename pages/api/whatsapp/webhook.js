@@ -3,7 +3,7 @@ import { WHATSAPP_CONFIG } from '../../../lib/whatsapp/config';
 import twilio from 'twilio';
 import { closeDB } from '../../../lib/whatsapp/chatbot';
 import { sanitizeInput } from '../../../lib/whatsapp/utils';
-import { connectDB } from '../../../lib/whatsapp/chatbot';
+import { connectToDatabase } from '../../../lib/whatsapp/chatbot';
 
 const { Twilio, validateRequest } = twilio;
 
@@ -97,7 +97,7 @@ async function connectWithRetry() {
   let retries = 0;
   while (retries < MAX_RETRIES) {
     try {
-      return await connectDB();
+      return await connectToDatabase();
     } catch (err) {
       retries++;
       if (retries >= MAX_RETRIES) throw err;
@@ -129,26 +129,12 @@ export default async function handler(req, res) {
       senderNumber = senderNumber.substring(9);
     }
 
-    // Connect to database once
-    db = await connectWithRetry();
-    
-    // Verify connection is active before proceeding
+    // Connect to database with retry
     try {
-      await db.command({ ping: 1 });
+      db = await connectWithRetry();
     } catch (error) {
-      console.error('DB connection verification failed:', error);
-      throw new Error('Database connection is not active');
-    }
-
-    // Basic rate limiting
-    const lastMessage = await db.collection('processed_messages')
-      .findOne({ sender: senderNumber }, { sort: { timestamp: -1 } });
-    
-    if (lastMessage) {
-      const timeSinceLastMessage = Date.now() - lastMessage.timestamp.getTime();
-      if (timeSinceLastMessage < 2000) { // 2 second cooldown
-        return res.status(200).json({ success: true });
-      }
+      console.error('Failed to connect to database after retries:', error);
+      return res.status(500).json({ error: 'Database connection failed' });
     }
 
     // Process the message
@@ -187,10 +173,7 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Webhook Error:', error);
-    
-    // Send a simple error response to avoid timeouts
     return res.status(500).json({ error: 'Internal server error' });
-    
   } finally {
     if (db) {
       try {
