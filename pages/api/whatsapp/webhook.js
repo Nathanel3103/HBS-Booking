@@ -89,6 +89,23 @@ function debugLog(step, data) {
   console.log('DEBUG -', step, ':', JSON.stringify(redactedData, null, 2));
 }
 
+// Add connection retry logic
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000;
+
+async function connectWithRetry() {
+  let retries = 0;
+  while (retries < MAX_RETRIES) {
+    try {
+      return await connectDB();
+    } catch (err) {
+      retries++;
+      if (retries >= MAX_RETRIES) throw err;
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+    }
+  }
+}
+
 export default async function handler(req, res) {
   let messageBody, senderNumber, senderName, db;
   const messageId = req.body?.MessageSid || '';
@@ -113,7 +130,7 @@ export default async function handler(req, res) {
     }
 
     // Connect to database once
-    db = await connectDB();
+    db = await connectWithRetry();
 
     // Basic rate limiting
     const lastMessage = await db.collection('processed_messages')
@@ -128,22 +145,27 @@ export default async function handler(req, res) {
 
     // Process the message
     const cleanedMessage = sanitizeInput(messageBody.toLowerCase().trim());
-    const response = await handleMessage(cleanedMessage, senderNumber);
+    const response = await handleMessage(cleanedMessage, senderNumber) || 
+      'Sorry, I couldn\'t process your request. Please try again later.';
     
-    if (!response) {
-      throw new Error('No response received from handleMessage');
-    }
-
     // Send response via Twilio
     const toNumber = senderNumber.startsWith('whatsapp:') ? 
       senderNumber : 
       `whatsapp:${senderNumber}`;
       
-    await twilioClient.messages.create({
-      body: sanitizeInput(response),
-      from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-      to: toNumber,
-    });
+    try {
+      await twilioClient.messages.create({
+        body: sanitizeInput(response),
+        from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+        to: toNumber,
+      });
+    } catch (error) {
+      if (error.code === 63038) {
+        console.log('Twilio daily limit reached');
+        return res.status(429).json({ error: 'Daily message limit reached' });
+      }
+      throw error;
+    }
 
     // Record the processed message
     await db.collection('processed_messages').insertOne({
