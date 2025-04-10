@@ -131,6 +131,14 @@ export default async function handler(req, res) {
 
     // Connect to database once
     db = await connectWithRetry();
+    
+    // Verify connection is active before proceeding
+    try {
+      await db.command({ ping: 1 });
+    } catch (error) {
+      console.error('DB connection verification failed:', error);
+      throw new Error('Database connection is not active');
+    }
 
     // Basic rate limiting
     const lastMessage = await db.collection('processed_messages')
