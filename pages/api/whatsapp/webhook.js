@@ -1,11 +1,15 @@
-import { handleMessage } from '../../../lib/whatsapp/chatbot';
+import { 
+  handleMessage,
+  connectToDatabase,
+  connectDB,
+  closeDB
+} from '../../../lib/whatsapp/chatbot';
 import { WHATSAPP_CONFIG } from '../../../lib/whatsapp/config';
 import twilio from 'twilio';
-import { closeDB } from '../../../lib/whatsapp/chatbot';
 import { sanitizeInput } from '../../../lib/whatsapp/utils';
-import { connectToDatabase } from '../../../lib/whatsapp/chatbot';
+import { validateRequest } from 'twilio';
 
-const { Twilio, validateRequest } = twilio;
+const { Twilio } = twilio;
 
 // Twilio client initialization
 const twilioClient = new Twilio(
@@ -131,7 +135,7 @@ export default async function handler(req, res) {
 
     // Connect to database with retry
     try {
-      db = await connectWithRetry();
+      db = await connectDB();
     } catch (error) {
       console.error('Failed to connect to database after retries:', error);
       return res.status(500).json({ error: 'Database connection failed' });
