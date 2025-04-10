@@ -1,7 +1,6 @@
 import { 
   handleMessage,
   connectToDatabase,
-  connectDB,
   closeDB
 } from '../../../lib/whatsapp/chatbot';
 import { WHATSAPP_CONFIG } from '../../../lib/whatsapp/config';
