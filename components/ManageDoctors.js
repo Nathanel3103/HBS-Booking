@@ -128,8 +128,8 @@ export default function ManageDoctors() {
                 {newDoctor.workingHours.map((hour, index) => (
                     <div key={index} className="grid grid-cols-3 gap-4 mt-2">
                         <input
-                            type="text"
-                            placeholder="Day (e.g., Monday)"
+                            type="date"
+                            placeholder="Date (e.g., 12/04/27)"
                             value={hour.day}
                             onChange={(e) => handleWorkingHoursChange(index, "day", e.target.value)}
                             className="border p-3 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
