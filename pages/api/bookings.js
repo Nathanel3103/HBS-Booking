@@ -8,30 +8,23 @@ export default async function handler(req, res) {
 
   if (req.method === "GET") {
     try {
-      const { doctorId, date, userId } = req.query;
+      const { doctorId, date } = req.query;
 
-      // If userId is provided, fetch booking history
-      if (userId) {
-        const bookings = await Booking.find({ userId })
-          .sort({ date: -1 })
-          .populate('doctor', 'name');  // Populate doctor details
-        return res.status(200).json({ success: true, data: bookings });
+      if (!doctorId || !date) {
+          return res.status(400).json({ error: "Doctor ID and Date are required" });
       }
 
-      // If doctorId and date are provided, fetch available slots
-      if (doctorId && date) {
-        const bookings = await Booking.find({ doctor: doctorId, date }).select("time");
-        return res.status(200).json({ success: true, bookings });
-      }
+      // Fetch only the bookings for the selected doctor and date
+      const bookings = await Booking.find({ doctor: doctorId, date }).select("time");
 
-      return res.status(400).json({ error: "Either userId or both doctorId and date are required" });
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      return res.status(500).json({ success: false, error: "Failed to fetch data" });
-    }
+      return res.status(200).json({ success: true, bookings });
+  } catch (error) {
+      console.error("Error fetching booked slots:", error);
+      return res.status(500).json({ success: false, error: "Failed to fetch booked slots" });
+  }
   } else if (req.method === "POST") { 
     
-    const { userId, appointmentType, doctor, date, time, description} = req.body;
+    const { userId, appointmentType, doctor, date, time, description, nextOfKin } = req.body;
 
     try {
         // Find the doctor
@@ -61,6 +54,7 @@ export default async function handler(req, res) {
             date,
             time,
             description,
+            nextOfKin,
         });
 
         await newBooking.save();
