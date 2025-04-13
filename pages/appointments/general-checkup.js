@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
+import Link from "next/link";
+import { ArrowLeft, Calendar as LucideCalendar, Clock, User, Phone, Mail, ChevronRight } from "lucide-react";
 
 export default function GeneralCheckup() {
     const [availableSlots, setAvailableSlots] = useState([]);
@@ -116,6 +118,9 @@ export default function GeneralCheckup() {
     return (
         <div className="min-h-screen bg-gray-50 py-8">
             <div className="max-w-4xl mx-auto px-6 bg-white rounded-lg shadow-lg border border-gray-200 p-8">
+            <Link href="/patient-dashboard" className="flex items-center group">
+              <ArrowLeft className="h-5 w-5 text-slate-600 group-hover:text-teal-600 transition-colors duration-200 group-hover:-translate-x-1" />
+            </Link>
                 <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">Book an Appointment</h1>
 
                 <form onSubmit={handleSubmit} className="space-y-6">

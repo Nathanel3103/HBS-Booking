@@ -8,107 +8,95 @@ export default async function handler(req, res) {
 
   if (req.method === "GET") {
     try {
-      const { doctorId, date } = req.query;
+      const { userId, doctorId, date } = req.query;
 
-      if (!doctorId || !date) {
-          return res.status(400).json({ error: "Doctor ID and Date are required" });
+      // Handle fetching bookings for a specific doctor and date
+      if (doctorId && date) {
+        const bookings = await Booking.find({ doctor: doctorId, date }).select("time");
+        return res.status(200).json({ success: true, bookings });
       }
 
-      // Fetch only the bookings for the selected doctor and date
-      const bookings = await Booking.find({ doctor: doctorId, date }).select("time");
-
-      return res.status(200).json({ success: true, bookings });
-  } catch (error) {
-      console.error("Error fetching booked slots:", error);
-      return res.status(500).json({ success: false, error: "Failed to fetch booked slots" });
-  }
-  } else if (req.method === "POST") { 
-    
-    const { userId, appointmentType, doctor, date, time, description, nextOfKin } = req.body;
-
-    try {
-        // Find the doctor
-        const doctorRecord = await Doctor.findById(doctor);
-        if (!doctorRecord) {
-            return res.status(404).json({ message: "Doctor not found" });
-        }
-
-        // Check if the selected time is already booked for the selected date
-        const isAlreadyBooked = doctorRecord.appointmentsBooked.some(
-            (appointment) => appointment.date === date && appointment.time === time
-        );
-
-        if (isAlreadyBooked) {
-            return res.status(400).json({ message: "Time slot already booked" });
-        }
-
-        // Add the new appointment to appointmentsBooked (DO NOT REMOVE FROM availableSlots)
-        doctorRecord.appointmentsBooked.push({ patientId: userId, date, time });
-        await doctorRecord.save();
-
-        // Create a new booking
-        const newBooking = new Booking({
-            userId,
-            appointmentType,
-            doctor,
-            date,
-            time,
-            description,
-            nextOfKin,
-        });
-
-        await newBooking.save();
-
-        res.status(201).json({ message: "Booking successful!" });   
-  } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Booking failed" });
-  } 
-    
-  } else if (req.method === "DELETE") {
-    try {
-      const { bookingId } = req.body;
-
-      const booking = await Booking.findById(bookingId);
-      if (!booking) return res.status(404).json({ error: "Booking not found" });
-
-      // Restore the canceled time slot
-      await Doctor.findByIdAndUpdate(booking.doctor, { $push: { availableSlots: booking.time } });
-
-      // Delete the booking
-      await Booking.findByIdAndDelete(bookingId);
-
-      res.status(200).json({ message: "Appointment canceled, slot restored" });
-  } catch (error) {
-      res.status(500).json({ error: "Cancellation failed" });
-  }
-  } else {
-    res.setHeader("Allow", ["GET", "POST"]);
-    return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
-  }
-   
-
-}
-
-/**
-   * 
-  if (req.method === "GET") {
-    try {
-      const { userId } = req.query;
-      if (!userId) {
-        return res.status(400).json({ error: "User ID is required" });
+      // Handle fetching user's booking history
+      if (userId) {
+        const bookings = await Booking.find({ userId })
+          .populate('doctor', 'name specialization') // Populate doctor details
+          .sort({ date: -1 });
+        return res.status(200).json({ success: true, data: bookings });
       }
 
-      const bookings = await Booking.find({ userId }).sort({ date: -1 });
-
-      return res.status(200).json({ success: true, data: bookings });
+      return res.status(400).json({ error: "Missing required parameters" });
     } catch (error) {
       console.error("Error fetching bookings:", error);
       return res.status(500).json({ success: false, error: "Failed to fetch bookings" });
     }
+  } else if (req.method === "POST") {
+    try {
+      const { userId, appointmentType, doctor, date, time, description, nextOfKin } = req.body;
+
+      // Find the doctor
+      const doctorRecord = await Doctor.findById(doctor);
+      if (!doctorRecord) {
+        return res.status(404).json({ message: "Doctor not found" });
+      }
+
+      // Check if the selected time is already booked
+      const isAlreadyBooked = doctorRecord.appointmentsBooked.some(
+        (appointment) => appointment.date === date && appointment.time === time
+      );
+
+      if (isAlreadyBooked) {
+        return res.status(400).json({ message: "Time slot already booked" });
+      }
+
+      // Add the new appointment to appointmentsBooked
+      doctorRecord.appointmentsBooked.push({ patientId: userId, date, time });
+      await doctorRecord.save();
+
+      // Create a new booking
+      const newBooking = new Booking({
+        userId,
+        appointmentType,
+        doctor: doctorRecord._id, // Ensure we're saving the doctor's ID
+        date,
+        time,
+        description,
+        nextOfKin,
+      });
+
+      await newBooking.save();
+      return res.status(201).json({ message: "Booking successful!" });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Booking failed" });
+    }
+  } else if (req.method === "DELETE") {
+    try {
+      const { bookingId } = req.body;
+
+      const booking = await Booking.findById(bookingId).populate('doctor');
+      if (!booking) {
+        return res.status(404).json({ error: "Booking not found" });
+      }
+
+      // Restore the canceled time slot
+      await Doctor.findByIdAndUpdate(booking.doctor._id, { $push: { availableSlots: booking.time } });
+
+      // Delete the booking
+      await Booking.findByIdAndDelete(bookingId);
+
+      return res.status(200).json({ message: "Appointment canceled, slot restored" });
+    } catch (error) {
+      return res.status(500).json({ error: "Cancellation failed" });
+    }
   } else {
-    return res.status(405).json({ success: false, error: "Method Not Allowed" });
+    res.setHeader("Allow", ["GET", "POST", "DELETE"]);
+    return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
   }
+}
+
+/**
+   * 
+  
 
    * if (req.method === "POST") {
     try {
