@@ -7,6 +7,8 @@ const BookingSchema = new mongoose.Schema({
   date: { type: Date, required: true },
   time: { type: String, required: true },
   description: { type: String },
+  source: { type: String, enum: ["Web", "WhatsApp"], required: true, default: "Web" }, // <-- identification in the database
+
 
   patientDetails: {
     firstName: { type: String },

@@ -133,7 +133,7 @@ export default function Patients() {
             <option value="">Select Gender</option>
             <option value="Male">Male</option>
             <option value="Female">Female</option>
-            <option value="Other">Other</option>
+            
           </select>
           
           {/** Patient Marital Status */}
@@ -151,8 +151,7 @@ export default function Patients() {
           <option value="Married">Married</option>
           <option value="Divorced">Divorced</option>
           <option value="Widowed">Widowed</option>
-          <option value="Registered Partnership">Registered Partnership</option>
-          <option value="Living Common Law">Living Common Law</option>
+          
           </select>
         
           {/** Employment status*/}

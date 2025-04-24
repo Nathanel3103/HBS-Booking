@@ -28,7 +28,6 @@ export default function AdminDashboard() {
 
     return (
         <div className="flex min-h-screen bg-gray-100">
-            {/* Sidebar  tried changing the sidebar to remain staic but was unable*/}
             <div className="w-64 bg-gray-900 text-white flex flex-col p-6 min-h-screen">
                 <h2 className="text-2xl font-bold mb-6 text-center">Admin Dashboard</h2>
 
