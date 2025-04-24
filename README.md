@@ -75,7 +75,10 @@ Let users view, cancel, or reschedule their appointments through WhatsApp.
 
 Just reply with the number or the topic you're most interested in — or if it's something else entirely, I'm down for that too!
 
-
+### Contributers 
+<a href="https://ithub.com/Nathanel3103/HBS-Booking/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Nathanel3103/HBS-Booking" />
+</a>
 
 
 
