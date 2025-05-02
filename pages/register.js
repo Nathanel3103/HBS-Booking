@@ -83,6 +83,16 @@ export default function Register() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-md p-8 m-4 rounded-xl shadow-lg bg-white">
+
+         {/* Logo */}
+         <div className="flex justify-center mb-6 bg-[#0c8fad] rounded-xl">
+            <img
+              src="/logo.png" // Make sure this path is correct
+              alt="App Logo"
+              className="h-16 w-auto"
+            />
+        </div>
+
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-800">Register</h2>
         </div>
@@ -208,15 +218,15 @@ export default function Register() {
           </div>
 
           <div classname ="hidden">
-            <label className="block text-sm font-medium mb-1 text-gray-700 hidden">
+            <label className="block text-sm font-medium mb-1 text-gray-700">
               Role
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none ">
-                <UserGroupIcon className="h-5 w-5 text-gray-400 hidden" />
+                <UserGroupIcon className="h-5 w-5 text-gray-400" />
               </div>
               <select
-                className="w-full pl-10 px-4 py-2 rounded-lg border border-gray-200 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 hidden"
+                className="w-full pl-10 px-4 py-2 rounded-lg border border-gray-200 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
               >

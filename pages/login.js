@@ -67,6 +67,16 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-md p-8 m-4 rounded-xl shadow-lg bg-white">
         <div className="mb-8">
+
+        {/* Logo */}
+        <div className="flex justify-center mb-6 bg-[#0c8fad] rounded-xl">
+          <img
+            src="/logo.png" // Make sure this path is correct
+            alt="App Logo"
+            className="h-16 w-auto"
+          />
+        </div>
+
           <h2 className="text-3xl font-bold text-gray-800">Login</h2>
         </div>
 

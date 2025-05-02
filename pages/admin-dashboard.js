@@ -29,7 +29,14 @@ export default function AdminDashboard() {
     return (
         <div className="flex min-h-screen bg-gray-100">
             <div className="w-64 bg-gray-900 text-white flex flex-col p-6 min-h-screen">
-                <h2 className="text-2xl font-bold mb-6 text-center">Admin Dashboard</h2>
+                <div className="flex flex-col items-center mb-6 space-y-2">
+                    <img
+                        src="/logoMain.png"
+                        alt="App Logo"
+                        className="h-12 w-auto"
+                    />
+                    <h2 className="text-xl font-semibold text-white">Admin Dashboard</h2>
+                </div>
 
                 <ul className="flex-1 space-y-2">
                     <SidebarItem 

@@ -66,9 +66,19 @@ export default function PatientDashboard() {
             {/* Navbar */}
             <nav className="bg-white border-b border-slate-200">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between h-16">
-                        <div className="flex items-center">
-                            <h1 className="text-xl font-bold text-teal-600">Health Booking System</h1>
+                    <div className="flex justify-between items-center h-16">
+
+                        {/* Logo and App Name */}
+                        <div className="flex items-center space-x-3">
+                                <img
+                                    src="/logoMain.png" 
+                                    alt="App Logo"
+                                    width={48}
+                                    height={48}
+                                />
+                            <span className="text-xl font-semibold text-teal-600 tracking-wide">
+                                Health Booking System
+                            </span>
                         </div>
 
                 {/* Desktop Menu */}
