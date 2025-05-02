@@ -48,7 +48,7 @@ export default async function handler(req, res) {
 
         const appointments = await Appointments.find({ appointmentType: "General Checkup" })
           .populate("userId", "name") // Fetch user's name
-          .populate("doctor", "name"); // Fetch doctor's name
+          .populate("doctor", "name"); // Fixed for doctor id check components/appointments.js
         
         res.status(200).json(appointments);
       } catch (error) {

@@ -2,6 +2,7 @@ import dbConnect from "../../lib/mongodb";
 import Booking from "../../models/Booking";
 import Doctor from "../../models/Doctors"; // Import the Doctor model
 import { getSession } from "next-auth/react";
+import mongoose from 'mongoose'; // Import mongoose
 
 export default async function handler(req, res) {
   await dbConnect();
@@ -30,62 +31,95 @@ export default async function handler(req, res) {
       return res.status(500).json({ success: false, error: "Failed to fetch bookings" });
     }
   } else if (req.method === "POST") {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
     try {
       const { userId, appointmentType, doctor, date, time, description, nextOfKin } = req.body;
 
-      // Find the doctor
-      const doctorRecord = await Doctor.findById(doctor);
+      const doctorRecord = await Doctor.findById(doctor).session(session);
       if (!doctorRecord) {
+        await session.abortTransaction();
+        session.endSession();
         return res.status(404).json({ message: "Doctor not found" });
       }
 
-      // Check if the selected time is already booked
-      const isAlreadyBooked = doctorRecord.appointmentsBooked.some(
-        (appointment) => appointment.date === date && appointment.time === time
-      );
-
-      if (isAlreadyBooked) {
-        return res.status(400).json({ message: "Time slot already booked" });
+      // Verify slot is still available (pre-check for better UX)
+      if (!doctorRecord.availableSlots.includes(time)) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(400).json({ message: "Time slot no longer available" });
       }
 
-      // Add the new appointment to appointmentsBooked
-      doctorRecord.appointmentsBooked.push({ patientId: userId, date, time });
-      await doctorRecord.save();
-
-      // Create a new booking
+      // Create and save booking
       const newBooking = new Booking({
         userId,
         appointmentType,
-        doctor: doctorRecord._id, // Ensure we're saving the doctor's ID
+        doctor: doctorRecord._id,
         date,
         time,
         description,
         nextOfKin,
       });
 
-      await newBooking.save();
+      await newBooking.save({ session });
+
+      // Update doctor - both appointmentsBooked AND availableSlots
+      await Doctor.findByIdAndUpdate(
+        doctor,
+        { 
+          $addToSet: { appointmentsBooked: { patientId: userId, date, time } },
+          $pull: { availableSlots: time } 
+        },
+        { session }
+      );
+
+      await session.commitTransaction();
+      session.endSession();
       return res.status(201).json({ message: "Booking successful!" });
     } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+      
+      if (error.code === 11000) {
+        return res.status(409).json({ message: "That slot was just taken, pick another time." });
+      }
       console.error(error);
       return res.status(500).json({ error: "Booking failed" });
     }
   } else if (req.method === "DELETE") {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
     try {
       const { bookingId } = req.body;
 
-      const booking = await Booking.findById(bookingId).populate('doctor');
+      const booking = await Booking.findById(bookingId).populate('doctor').session(session);
       if (!booking) {
+        await session.abortTransaction();
+        session.endSession();
         return res.status(404).json({ error: "Booking not found" });
       }
 
       // Restore the canceled time slot
-      await Doctor.findByIdAndUpdate(booking.doctor._id, { $push: { availableSlots: booking.time } });
+      await Doctor.findByIdAndUpdate(
+        booking.doctor._id,
+        { 
+          $pull: { appointmentsBooked: { time: booking.time } },
+          $addToSet: { availableSlots: booking.time } 
+        },
+        { session }
+      );
 
       // Delete the booking
-      await Booking.findByIdAndDelete(bookingId);
+      await Booking.findByIdAndDelete(bookingId, { session });
 
+      await session.commitTransaction();
+      session.endSession();
       return res.status(200).json({ message: "Appointment canceled, slot restored" });
     } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(500).json({ error: "Cancellation failed" });
     }
   } else {
@@ -124,7 +158,7 @@ export default async function handler(req, res) {
   res.status(500).json({ error: "Failed to create booking" });
 }
 } else {
-  // 🚨 THIS IS IMPORTANT
+  // THIS IS IMPORTANT
 res.setHeader("Allow", ["POST"]);
 res.status(405).json({ error: "Method not allowed" });
 

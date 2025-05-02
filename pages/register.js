@@ -245,7 +245,7 @@ export default function Register() {
   );
 }
 
-// Add this to your global CSS or a new style tag in your document head
+// Constant styles ....to be put in global.css
 const styles = `
   .dark-phone-input .selected-flag:hover,
   .dark-phone-input .selected-flag:focus,

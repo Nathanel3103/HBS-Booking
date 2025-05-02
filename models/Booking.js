@@ -25,4 +25,10 @@ const BookingSchema = new mongoose.Schema({
   },
 });
 
+//  unique compound index
+BookingSchema.index(
+  { doctor: 1, date: 1, time: 1 },
+  { unique: true, name: "uniq_doctor_date_time" }
+);
+
 export default mongoose.models.Booking || mongoose.model("Booking", BookingSchema);
