@@ -56,10 +56,11 @@ export default async function handler(req, res) {
         userId,
         appointmentType,
         doctor: doctorRecord._id,
-        date,
+        date: typeof date === 'string' ? date : `${new Date(date).getFullYear()}-${String(new Date(date).getMonth() + 1).padStart(2, '0')}-${String(new Date(date).getDate()).padStart(2, '0')}`,
         time,
         description,
         nextOfKin,
+        source: "Web",
       });
 
       await newBooking.save({ session });
@@ -67,10 +68,7 @@ export default async function handler(req, res) {
       // Update doctor - both appointmentsBooked AND availableSlots
       await Doctor.findByIdAndUpdate(
         doctor,
-        { 
-          $addToSet: { appointmentsBooked: { patientId: userId, date, time } },
-          $pull: { availableSlots: time } 
-        },
+        { $addToSet: { appointmentsBooked: { patientId: userId, date, time } } },
         { session }
       );
 
@@ -82,7 +80,7 @@ export default async function handler(req, res) {
       session.endSession();
       
       if (error.code === 11000) {
-        return res.status(409).json({ message: "That slot was just taken, pick another time." });
+        return res.status(409).json({ error: "That slot was just taken—please choose another time." });
       }
       console.error(error);
       return res.status(500).json({ error: "Booking failed" });

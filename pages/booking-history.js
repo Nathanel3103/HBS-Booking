@@ -252,11 +252,18 @@ export default function BookingHistory() {
                       <div className="space-y-2">
                         <p className="text-sm text-slate-500">Date</p>
                         <p className="font-medium text-slate-900">
-                          {new Date(booking.date).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
+                          {(() => {
+  if (booking.date && /^\d{4}-\d{2}-\d{2}$/.test(booking.date)) {
+    // Create date in local timezone to avoid UTC conversion issues
+    const [year, month, day] = booking.date.split('-').map(Number);
+    const localDate = new Date(year, month - 1, day);
+    return localDate.toLocaleDateString();
+  } else if (booking.date) {
+    return `${new Date(booking.date).getFullYear()}-${String(new Date(booking.date).getMonth() + 1).padStart(2, '0')}-${String(new Date(booking.date).getDate()).padStart(2, '0')}`;
+  } else {
+    return '';
+  }
+})()}
                         </p>
                       </div>
                       <div className="space-y-2">
