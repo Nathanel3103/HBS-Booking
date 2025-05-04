@@ -29,15 +29,20 @@ export default function Appointments() {
       source: appt.source || "Web"
     }));
 
+  
     // Normalize WhatsApp appointments
-    const whatsappAppointments = waRes.data.map(appt => ({
-      _id: appt._id,
-      patient: appt.patientName || "Unknown",
-      doctor: appt.doctor?.name || "Unknown",
-      date: appt.date,
-      time: appt.time,
-      source: appt.source || "WhatsApp"
-    }));
+const whatsappAppointments = waRes.data.map(appt => {
+  console.log("WhatsApp appointment doctor:", appt.doctor); // for easy Debug log
+  return {
+    _id: appt._id,
+    patient: appt.patientName || "Unknown",
+    doctor: typeof appt.doctor === 'object' ? appt.doctor.name : appt.doctor || "Unknown",
+    date: appt.date,
+    time: appt.time,
+    source: appt.source || "WhatsApp"
+  };
+});
+
 
     setAppointments([...webAppointments, ...whatsappAppointments]);
   } catch (error) {
