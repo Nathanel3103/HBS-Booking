@@ -29,15 +29,20 @@ export default function Appointments() {
       source: appt.source || "Web"
     }));
 
+  
     // Normalize WhatsApp appointments
-    const whatsappAppointments = waRes.data.map(appt => ({
-      _id: appt._id,
-      patient: appt.patientName || "Unknown",
-      doctor: appt.doctor?.name || "Unknown",
-      date: appt.date,
-      time: appt.time,
-      source: appt.source || "WhatsApp"
-    }));
+const whatsappAppointments = waRes.data.map(appt => {
+  console.log("WhatsApp appointment doctor:", appt.doctor); // for easy Debug log
+  return {
+    _id: appt._id,
+    patient: appt.patientName || "Unknown",
+    doctor: typeof appt.doctor === 'object' ? appt.doctor.name : appt.doctor || "Unknown",
+    date: appt.date,
+    time: appt.time,
+    source: appt.source || "WhatsApp"
+  };
+});
+
 
     setAppointments([...webAppointments, ...whatsappAppointments]);
   } catch (error) {
@@ -136,7 +141,16 @@ export default function Appointments() {
                   <tr key={appt._id} className="border-b border-gray-200 hover:bg-gray-100 transition duration-200">
                     <td className="p-3 border border-gray-300">{appt.patient}</td>
                     <td className="p-3 border border-gray-300">{appt.doctor}</td>
-                    <td className="p-3 border border-gray-300">{new Date(appt.date).toLocaleDateString()}</td>
+                    <td className="p-3 border border-gray-300">{(() => {
+  if (appt.date && /^\d{4}-\d{2}-\d{2}$/.test(appt.date)) {
+    // If date is in YYYY-MM-DD, display as-is to avoid timezone issues
+    return appt.date;
+  } else if (appt.date) {
+    return `${new Date(appt.date).getFullYear()}-${String(new Date(appt.date).getMonth() + 1).padStart(2, '0')}-${String(new Date(appt.date).getDate()).padStart(2, '0')}`;
+  } else {
+    return '';
+  }
+})()}</td>
                     <td className="p-3 border border-gray-300">{appt.time}</td>
                   </tr>
                 ))
@@ -169,7 +183,16 @@ export default function Appointments() {
                   <tr key={appt._id} className="border-b border-gray-200 hover:bg-gray-100 transition duration-200">
                     <td className="p-3 border border-gray-300">{appt.patient}</td>
                     <td className="p-3 border border-gray-300">{appt.doctor}</td>
-                    <td className="p-3 border border-gray-300">{new Date(appt.date).toLocaleDateString()}</td>
+                    <td className="p-3 border border-gray-300">{(() => {
+  if (appt.date && /^\d{4}-\d{2}-\d{2}$/.test(appt.date)) {
+    // If date is in YYYY-MM-DD, display as-is to avoid timezone issues
+    return appt.date;
+  } else if (appt.date) {
+    return `${new Date(appt.date).getFullYear()}-${String(new Date(appt.date).getMonth() + 1).padStart(2, '0')}-${String(new Date(appt.date).getDate()).padStart(2, '0')}`;
+  } else {
+    return '';
+  }
+})()}</td>
                     <td className="p-3 border border-gray-300">{appt.time}</td>
                   </tr>
                 ))

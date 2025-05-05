@@ -4,7 +4,7 @@ const BookingSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   appointmentType: { type: String, required: true }, // General Checkup, Specialist Visit, etc.
   doctor: { type: mongoose.Schema.Types.ObjectId, ref: "Doctor", required: true },
-  date: { type: Date, required: true },
+  date: { type: String, required: true },
   time: { type: String, required: true },
   description: { type: String },
   source: { type: String, enum: ["Web", "WhatsApp"], required: true, default: "Web" }, // <-- identification in the database

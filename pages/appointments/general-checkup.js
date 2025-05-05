@@ -31,58 +31,51 @@ export default function GeneralCheckup() {
     }, []);
 
     const isDateDisabled = (date) => {
-        if (!formData.doctor) return true;
-        const selectedDoctor = doctors.find((doc) => doc._id === formData.doctor);
-        if (!selectedDoctor) return true;
+    if (!formData.doctor) return true;
+    const selectedDoctor = doctors.find((doc) => doc._id === formData.doctor);
+    if (!selectedDoctor) return true;
 
-        const dayName = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(date);
-        const isWorkingDay = selectedDoctor.workingHours.some((day) => day.day === dayName);
-        if (!isWorkingDay) return true;
+    const dayName = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(date);
+    const isWorkingDay = selectedDoctor.workingHours.some((day) => day.day === dayName);
+    if (!isWorkingDay) return true;
 
-        const formattedDate = date.toISOString().split("T")[0];
-        const bookedCount = selectedDoctor.appointmentsBooked.filter(
-            (appointment) => appointment.date === formattedDate
-        ).length;
+    // Use local YYYY-MM-DD format for comparison
+    const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const bookedCount = selectedDoctor.appointmentsBooked.filter(
+        (appointment) => appointment.date === formattedDate
+    ).length;
 
-        const slotsForDay = selectedDoctor.availableSlotsByDay?.[dayName] || selectedDoctor.availableSlots || [];
-        return bookedCount >= slotsForDay.length;
-    };
+    const slotsForDay = selectedDoctor.availableSlotsByDay?.[dayName] || selectedDoctor.availableSlots || [];
+    return bookedCount >= slotsForDay.length;
+};
 
     const handleDoctorChange = async (doctorId) => {
-        setFormData((prev) => ({ ...prev, doctor: doctorId }));
-        const selectedDoctor = doctors.find((doc) => doc._id === doctorId);
-        if (selectedDoctor) {
-            const todayDay = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(formData.date);
-            const slots = selectedDoctor.availableSlotsByDay?.[todayDay] || selectedDoctor.availableSlots || [];
-            setAvailableSlots(slots);
-        }
+        setFormData((prev) => ({ ...prev, doctor: doctorId, time: "" }));
+        setAvailableSlots([]);
     };
 
     const handleDateChange = async (selectedDate) => {
-        if (isDateDisabled(selectedDate)) return;
-        setFormData((prev) => ({ ...prev, date: selectedDate }));
+    if (isDateDisabled(selectedDate)) return;
+    setFormData((prev) => ({ ...prev, date: selectedDate, time: "" }));
+    if (!formData.doctor) return;
+    try {
+        // Use local YYYY-MM-DD format for API call
+        const dateString = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
+        const response = await fetch(`/api/doctorAvailability?doctorId=${formData.doctor}&date=${dateString}`);
+        if (!response.ok) throw new Error("Failed to fetch available slots");
+        const data = await response.json();
 
-        if (!formData.doctor) return;
-
-        try {
-            const dateString = selectedDate.toISOString().split("T")[0];
-            const response = await fetch(`/api/bookings?doctorId=${formData.doctor}&date=${dateString}`);
-            if (!response.ok) throw new Error("Failed to fetch booked slots");
-            const data = await response.json();
-
-            const bookedSlots = data.bookings.map((appointment) => appointment.time);
-
-            const selectedDoctor = doctors.find((doc) => doc._id === formData.doctor);
-            if (selectedDoctor) {
-                const dayName = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(selectedDate);
-                const dailySlots = selectedDoctor.availableSlotsByDay?.[dayName] || selectedDoctor.availableSlots || [];
-                const filteredSlots = dailySlots.filter((slot) => !bookedSlots.includes(slot));
-                setAvailableSlots(filteredSlots);
-            }
-        } catch (error) {
-            console.error("Error fetching booked slots:", error);
-        }
-    };
+        // Filter out slots that are already booked for this date
+        const selectedDoctor = doctors.find((doc) => doc._id === formData.doctor);
+        const bookedSlots = selectedDoctor?.appointmentsBooked
+            .filter((appointment) => appointment.date === dateString)
+            .map((appointment) => appointment.time) || [];
+        const filteredSlots = data.freeSlots.filter(slot => !bookedSlots.includes(slot));
+        setAvailableSlots(filteredSlots);
+    } catch (error) {
+        console.error("Error fetching available slots:", error);
+    }
+};
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -91,9 +84,10 @@ export default function GeneralCheckup() {
             userId: user.id,
             appointmentType: "General Checkup",
             doctor: formData.doctor,
-            date: formData.date.toISOString().split("T")[0],
+            date: `${formData.date.getFullYear()}-${String(formData.date.getMonth() + 1).padStart(2, '0')}-${String(formData.date.getDate()).padStart(2, '0')}`,
             time: formData.time,
             description: formData.description,
+            source: "Web",
         };
 
         try {
@@ -102,11 +96,14 @@ export default function GeneralCheckup() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(bookingData),
             });
-
             if (response.ok) {
                 alert("Booking successful!");
                 setFormData({ date: new Date(), time: "", doctor: "", description: "" });
-                handleDoctorChange(formData.doctor);
+                setAvailableSlots([]);
+            } else if (response.status === 409) {
+                alert("That slot was just taken—please choose another time.");
+                await handleDateChange(formData.date);
+                return;
             } else {
                 alert("Booking failed. Try again.");
             }

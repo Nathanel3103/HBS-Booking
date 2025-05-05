@@ -40,7 +40,7 @@ const NotifiedPatients = () => {
                 <td className="border p-2">{patient.name}</td>
                 <td className="border p-2">{patient.phoneNumber}</td>
                 <td className="border p-2">{patient.doctorName}</td>
-                <td className="border p-2">{new Date(patient.appointmentDate).toLocaleDateString()}</td>
+                <td className="border p-2">{`${new Date(patient.appointmentDate).getFullYear()}-${String(new Date(patient.appointmentDate).getMonth() + 1).padStart(2, '0')}-${String(new Date(patient.appointmentDate).getDate()).padStart(2, '0')}`}</td>
                 <td className="border p-2">{patient.description || "N/A"}</td>
                 <td className="border p-2">{new Date(patient.notifiedAt).toLocaleString()}</td>
               </tr>
