@@ -17,11 +17,14 @@ export default async function handler(req, res) {
   console.log("Connecting to the Database");
 
   try {
-    const tomorrow = moment().add(1, "days").startOf("day").toDate();
-    const endOfTomorrow = moment().add(1, "days").endOf("day").toDate();
+    // Get tomorrow's date as a string in the same format as your bookings
+    const tomorrowStr = moment()
+      .add(1, 'days')
+      .format('YYYY-MM-DD'); // Adjust format to match your string dates
 
+    // Query for bookings with date string equal to tomorrowStr
     const bookings = await Booking.find({
-      date: { $gte: tomorrow, $lt: endOfTomorrow },
+      date: tomorrowStr, 
     }).populate("doctor");
 
     if (bookings.length === 0) {
@@ -57,7 +60,7 @@ export default async function handler(req, res) {
         name: user.name,
         phoneNumber,
         doctorName: doctor.name,
-        appointmentDate: date,
+        appointmentDate: moment(date, "YYYY-MM-DD").toDate(),
         description,
       });
     }
