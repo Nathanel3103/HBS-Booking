@@ -26,6 +26,7 @@ export default function Appointments() {
       doctor: appt.doctor?.name || "Unknown",
       date: appt.date,
       time: appt.time,
+      description: appt.description || "N/A",
       source: appt.source || "Web"
     }));
 
@@ -39,6 +40,7 @@ const whatsappAppointments = waRes.data.map(appt => {
     doctor: typeof appt.doctor === 'object' ? appt.doctor.name : appt.doctor || "Unknown",
     date: appt.date,
     time: appt.time,
+    description: appt.reason || "N/A",
     source: appt.source || "WhatsApp"
   };
 });
@@ -133,6 +135,7 @@ const whatsappAppointments = waRes.data.map(appt => {
                 <th className="p-3 border border-gray-300 text-left">Doctor</th>
                 <th className="p-3 border border-gray-300 text-left">Date</th>
                 <th className="p-3 border border-gray-300 text-left">Timeslot</th>
+                <th className="p-3 border border-gray-300 text-left">Description</th>
               </tr>
             </thead>
             <tbody>
@@ -152,6 +155,7 @@ const whatsappAppointments = waRes.data.map(appt => {
   }
 })()}</td>
                     <td className="p-3 border border-gray-300">{appt.time}</td>
+                    <td className="p-3 border border-gray-300">{appt.description}</td>
                   </tr>
                 ))
               ) : (
@@ -175,6 +179,9 @@ const whatsappAppointments = waRes.data.map(appt => {
                 <th className="p-3 border border-gray-300 text-left">Doctor</th>
                 <th className="p-3 border border-gray-300 text-left">Date</th>
                 <th className="p-3 border border-gray-300 text-left">Timeslot</th>
+
+                <th className="border p-2">Description</th>
+
               </tr>
             </thead>
             <tbody>
@@ -194,6 +201,8 @@ const whatsappAppointments = waRes.data.map(appt => {
   }
 })()}</td>
                     <td className="p-3 border border-gray-300">{appt.time}</td>
+                    <td className="p-3 border border-gray-300">{appt.description}</td>
+
                   </tr>
                 ))
               ) : (

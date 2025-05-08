@@ -16,6 +16,17 @@ const UserSchema = new mongoose.Schema({
     name: { type: String },
     phone: { type: String },
   },
+  securityQuestion: {
+    question: { type: String, required: false },
+    answer: { type: String, required: false, select: false }
+  },
+  passwordResetToken: { type: String, select: false },
+  passwordResetExpires: { type: Date, select: false }
 });
+
+
+
+
+
 
 export default mongoose.models.User || mongoose.model("User", UserSchema);
