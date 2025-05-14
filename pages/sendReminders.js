@@ -3,20 +3,31 @@ import { useState } from 'react';
 export default function SendReminders() {
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
+  const [details, setDetails] = useState(null);
 
   const handleSendReminders = async () => {
     try {
       setStatus('Sending reminders...');
+      setError('');
+      setDetails(null);
+      
       const res = await fetch("/api/send-reminders", {
         method: "POST",
       });
 
       const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to send reminders');
+      }
+      
       setStatus('Reminders sent successfully!');
+      setDetails(data);
       console.log("Reminder Response:", data);
     } catch (error) {
       console.error("Failed to send reminders:", error);
-      setError('Failed to send reminders. Please try again.');
+
+      setError(`Failed to send reminders: ${error.message}`);
       setStatus('');
     }
   };
@@ -36,7 +47,15 @@ export default function SendReminders() {
           </button>
 
           {status && (
-            <p className="mt-4 text-green-600">{status}</p>
+
+            <div className="mt-4">
+              <p className="text-green-600">{status}</p>
+              {details && (
+                <div className="mt-2 p-3 bg-gray-50 rounded">
+                  <p>Sent {details.notifiedPatients?.length || 0} reminders</p>
+                </div>
+              )}
+            </div>
           )}
 
           {error && (

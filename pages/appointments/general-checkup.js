@@ -90,26 +90,9 @@ export default function GeneralCheckup() {
             source: "Web",
         };
 
-        try {
-            const response = await fetch("/api/bookings", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(bookingData),
-            });
-            if (response.ok) {
-                alert("Booking successful!");
-                setFormData({ date: new Date(), time: "", doctor: "", description: "" });
-                setAvailableSlots([]);
-            } else if (response.status === 409) {
-                alert("That slot was just taken—please choose another time.");
-                await handleDateChange(formData.date);
-                return;
-            } else {
-                alert("Booking failed. Try again.");
-            }
-        } catch (error) {
-            console.error("Error booking appointment:", error);
-        }
+        // Save to sessionStorage and redirect to payment
+        sessionStorage.setItem("pendingBooking", JSON.stringify(bookingData));
+        window.location.href = "/payment"; // client-side redirect
     };
 
     return (

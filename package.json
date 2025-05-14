@@ -7,10 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "smee":"smee -u https://smee.i/GbWIbAo04rAd4mVe -t http://localhost:3000/api/whatsapp/webhook"
+    "smee": "smee -u https://smee.i/GbWIbAo04rAd4mVe -t http://localhost:3000/api/whatsapp/webhook"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "@paypal/react-paypal-js": "^8.8.3",
     "autoprefixer": "^10.4.20",
     "axios": "^1.8.4",
     "bcryptjs": "^3.0.0",

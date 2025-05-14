@@ -18,7 +18,7 @@ export default function PatientDashboard() {
     const [phoneMissing, setPhoneMissing] = useState(false);
     const [notifications, setNotifications] = useState([
         { id: 1, message: "Thank you for using our application", type: "reminder" },
-        { id: 2, message: "Please update your profile ", type: "action" }
+        { id: 2, message: "Please complete registration to update your profile  ", type: "action" }
     ]);
     const router = useRouter();
 
